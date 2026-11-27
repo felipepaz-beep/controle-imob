@@ -1,0 +1,901 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Controle Imob</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Inter:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: barra lateral de navegação + área de trabalho; período no topo; painel em grade de cartões e gráficos */
+:root{
+  --bg:#f2f4f1; --surface:#ffffff; --surface-2:#e9ede8; --line:#d6ddd5;
+  --fg:#15201a; --muted:#5b6a61; --accent:#1d6a4d; --accent-soft:#dcebe3; --accent-ink:#ffffff;
+  --gold:#9c7020; --gold-soft:#f3e8d2; --blue:#3a68ad;
+  --good:#23794a; --good-soft:#dcefe3; --warn:#a86300; --warn-soft:#f7ead6; --bad:#b0352b; --bad-soft:#f6dfdc;
+  --shadow:0 1px 2px rgba(20,32,26,.06),0 4px 14px rgba(20,32,26,.05);
+  --f-display:"Bricolage Grotesque","Avenir Next","Segoe UI",system-ui,sans-serif;
+  --f-body:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){:root{
+  --bg:#0e1411; --surface:#151d19; --surface-2:#1c2621; --line:#2a3630;
+  --fg:#e5ebe7; --muted:#93a299; --accent:#52b689; --accent-soft:#1d3329; --accent-ink:#06140d;
+  --gold:#d8a952; --gold-soft:#33291a; --blue:#7ea8e8;
+  --good:#5cc28b; --good-soft:#18301f; --warn:#e6a640; --warn-soft:#352813; --bad:#ee7065; --bad-soft:#3a1d1a;
+  --shadow:0 1px 2px rgba(0,0,0,.3); color-scheme:dark}}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:14px;line-height:1.45}
+[hidden]{display:none!important}
+h1,h2,h3{font-family:var(--f-display);margin:0;text-wrap:balance;letter-spacing:-.01em}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.num,td.n,th.n{font-variant-numeric:tabular-nums}
+
+.app{display:grid;grid-template-columns:228px minmax(0,1fr);min-height:100vh}
+.nav{background:var(--surface);border-right:1px solid var(--line);padding:22px 14px;display:flex;flex-direction:column;gap:4px;position:sticky;top:0;height:100vh}
+.brand{display:flex;align-items:center;gap:10px;padding:0 8px 18px}
+.mark{width:34px;height:34px;border-radius:9px;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;font-family:var(--f-display);font-weight:700;font-size:15px;flex:none}
+.brand b{font-family:var(--f-display);font-size:16px;display:block;line-height:1.1}
+.brand small{color:var(--muted);font-size:12px}
+.nav a{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:8px;color:var(--muted);text-decoration:none;font-weight:500}
+.nav a svg{width:18px;height:18px;flex:none}
+.nav a:hover{background:var(--surface-2);color:var(--fg)}
+.nav a.on{background:var(--accent-soft);color:var(--accent);font-weight:600}
+.nav .foot{margin-top:auto;color:var(--muted);font-size:12px;padding:8px 10px;display:flex;flex-direction:column;gap:10px}
+.me{display:flex;align-items:center;gap:8px;border-top:1px solid var(--line);padding-top:12px}
+.me b{color:var(--fg);font-size:13px;display:block}
+
+main{min-width:0;padding:20px max(16px,env(safe-area-inset-right,0px)) 48px max(16px,env(safe-area-inset-left,0px))}
+.wrap{max-width:1240px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+.top{display:flex;flex-wrap:wrap;align-items:center;gap:12px 16px;justify-content:space-between}
+.top h1{font-size:26px}
+.top .sub{color:var(--muted);font-size:13px;margin-top:2px}
+.period{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.seg{display:inline-flex;background:var(--surface-2);border-radius:8px;padding:3px}
+.seg button{border:0;background:transparent;padding:6px 12px;border-radius:6px;cursor:pointer;color:var(--muted);font-weight:500}
+.seg button.on{background:var(--surface);color:var(--fg);box-shadow:var(--shadow)}
+.mnav{display:inline-flex;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:8px}
+.mnav button{border:0;background:transparent;width:32px;height:34px;cursor:pointer;color:var(--muted);font-size:16px}
+.mnav button:hover{color:var(--fg)}
+.mnav span{min-width:128px;text-align:center;font-weight:600}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--line);background:var(--surface);padding:8px 13px;border-radius:8px;cursor:pointer;font-weight:500;white-space:nowrap}
+.btn:hover{border-color:var(--muted)}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600}
+.btn.pri:hover{filter:brightness(1.07)}
+.btn.sm{padding:4px 9px;font-size:12.5px;border-radius:6px}
+.btn.ghost{border-color:transparent;background:transparent;color:var(--muted)}
+.btn.ghost:hover{color:var(--fg);background:var(--surface-2)}
+.btn.danger{color:var(--bad);border-color:var(--bad-soft)}
+.btn.danger.armed{background:var(--bad);color:#fff;border-color:var(--bad)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.link{background:none;border:0;color:var(--accent);cursor:pointer;padding:0;font-weight:600}
+
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px 18px;min-width:0}
+.card h2{font-size:16px}
+.card .hd{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+.card .hd small{color:var(--muted)}
+.grid{display:grid;gap:14px}
+.g4{grid-template-columns:repeat(4,minmax(0,1fr))}
+.g3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.g2{grid-template-columns:repeat(2,minmax(0,1fr))}
+
+.kpi{display:flex;flex-direction:column;gap:4px;padding:14px 16px}
+.lb{font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600}
+.kpi .v{font-family:var(--f-display);font-size:24px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.15;overflow-wrap:anywhere}
+.kpi .d{font-size:12.5px;color:var(--muted)}
+.kpi.gold .v{color:var(--gold)}
+.kpi.good .v{color:var(--good)}
+.kpi.bad .v{color:var(--bad)}
+
+.meta{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:22px;padding:20px 22px}
+.meta .big{font-family:var(--f-display);font-size:36px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1;margin-top:8px}
+.meta .of{color:var(--muted);font-size:14px;margin-top:6px}
+.bar{height:12px;background:var(--surface-2);border-radius:99px;overflow:hidden;position:relative;margin-top:14px}
+.bar i{display:block;height:100%;background:var(--accent);border-radius:99px;transition:width .5s}
+.bar .tick{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--fg);opacity:.55}
+.bar.thin{height:8px;margin-top:8px}
+.meta .facts{display:grid;grid-template-columns:1fr 1fr;gap:12px 18px;align-content:center}
+.fact .v{font-weight:700;font-size:17px;font-variant-numeric:tabular-nums}
+.fact .s{font-size:12px;color:var(--muted);margin-top:4px}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:10px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:10px;height:10px;border-radius:2px;display:inline-block}
+
+.chart{position:relative;height:260px}
+.chart.tall{height:300px}
+.empty-chart{height:100%;display:grid;place-items:center;color:var(--muted);text-align:center;font-size:13px;border:1px dashed var(--line);border-radius:8px}
+
+.tbl-wrap{overflow-x:auto;margin:0 -18px;padding:0 18px}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th{text-align:left;font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:600;padding:8px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:10px;border-bottom:1px solid var(--line);vertical-align:middle}
+tr:last-child td{border-bottom:0}
+td.n,th.n{text-align:right;white-space:nowrap}
+tfoot td{font-weight:700;border-top:2px solid var(--line);border-bottom:0}
+tbody tr:hover{background:var(--surface-2)}
+.t2{color:var(--muted);font-size:12px}
+td.act{white-space:nowrap;text-align:right}
+td select{padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:var(--bg)}
+.pill{display:inline-block;padding:2px 9px;border-radius:99px;font-size:12px;font-weight:600;white-space:nowrap}
+.pill.ok{background:var(--good-soft);color:var(--good)}
+.pill.part{background:var(--warn-soft);color:var(--warn)}
+.pill.no{background:var(--bad-soft);color:var(--bad)}
+.pill.mute{background:var(--surface-2);color:var(--muted)}
+.rank{display:inline-grid;place-items:center;width:24px;height:24px;border-radius:6px;background:var(--surface-2);font-weight:700;font-size:12px}
+.rank.r1{background:var(--gold-soft);color:var(--gold)}
+
+.filters{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.filters select{padding:7px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface)}
+
+.cor-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:14px}
+.cor{cursor:pointer;display:flex;flex-direction:column;gap:12px;transition:border-color .15s}
+.cor:hover{border-color:var(--accent)}
+.who{display:flex;align-items:center;gap:10px}
+.av{width:38px;height:38px;border-radius:50%;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;font-weight:700;flex:none}
+.av.sm{width:30px;height:30px;font-size:12px}
+.cor .who b{display:block;font-size:15px}
+.cor .who small{color:var(--muted)}
+.cor .stats{display:grid;grid-template-columns:1fr 1fr;gap:8px 14px}
+.cor .stats div{display:flex;flex-direction:column}
+.cor .stats span{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;font-weight:600}
+.cor .stats strong{font-variant-numeric:tabular-nums;font-size:15px}
+.cor.off{opacity:.6}
+
+.hbar{display:grid;grid-template-columns:minmax(90px,140px) minmax(0,1fr) auto;gap:10px;align-items:center;font-size:13px;margin:6px 0}
+.hbar .tr{height:10px;background:var(--surface-2);border-radius:99px;overflow:hidden}
+.hbar .tr i{display:block;height:100%;background:var(--blue);border-radius:99px}
+.hbar .c{text-align:right;font-variant-numeric:tabular-nums;font-weight:600;min-width:36px}
+.split{display:flex;height:14px;border-radius:99px;overflow:hidden;margin:10px 0 4px}
+.split i{display:block;height:100%}
+
+.empty{text-align:center;padding:42px 20px;color:var(--muted)}
+.empty h3{color:var(--fg);font-size:17px;margin-bottom:6px}
+.empty p{max-width:46ch;margin:0 auto 14px}
+.note{border-radius:10px;padding:10px 14px;font-size:13px;background:var(--warn-soft);color:var(--warn)}
+
+.overlay{position:fixed;inset:0;background:rgba(10,16,13,.45);display:flex;align-items:flex-start;justify-content:center;padding:24px 12px;overflow-y:auto;z-index:50}
+.sheet{background:var(--surface);border-radius:14px;width:100%;max-width:560px;padding:20px 22px;box-shadow:0 20px 60px rgba(0,0,0,.25);border:1px solid var(--line)}
+.sheet.wide{max-width:820px}
+.sheet h2{font-size:19px;margin-bottom:14px}
+.form{display:grid;grid-template-columns:1fr 1fr;gap:12px 14px}
+.form .full{grid-column:1/-1}
+.form label{display:flex;flex-direction:column;gap:5px;font-size:12.5px;font-weight:600;color:var(--muted)}
+.form input,.form select,.form textarea{padding:9px 11px;border:1px solid var(--line);border-radius:8px;background:var(--bg);font-weight:400;font-size:14px;color:var(--fg);width:100%}
+.form textarea{min-height:70px;resize:vertical}
+.hint{font-weight:400;font-size:12px}
+.preview{background:var(--surface-2);border-radius:10px;padding:12px 14px;font-size:13px}
+.preview .row{display:flex;justify-content:space-between;gap:10px;padding:2px 0}
+.preview .row b{font-variant-numeric:tabular-nums}
+.preview .row.tot{border-top:1px solid var(--line);margin-top:6px;padding-top:6px;font-weight:700}
+.sheet .foot{display:flex;justify-content:space-between;gap:10px;margin-top:18px;flex-wrap:wrap}
+.sheet .foot .r{display:flex;gap:8px;margin-left:auto}
+.radio{display:flex;gap:8px}
+.radio label{flex:1;flex-direction:row;align-items:center;gap:8px;border:1px solid var(--line);border-radius:8px;padding:9px 11px;cursor:pointer;color:var(--fg);font-weight:500}
+.radio input{width:auto}
+
+/* telas de acesso */
+.auth{min-height:100vh;display:grid;place-items:center;padding:24px 16px;background:
+  radial-gradient(900px 500px at 15% -10%,var(--accent-soft),transparent 60%),var(--bg)}
+.auth-card{width:100%;max-width:400px;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:28px 26px;box-shadow:var(--shadow)}
+.auth-card .brand{padding:0 0 22px}
+.auth-card h1{font-size:22px;margin-bottom:4px}
+.auth-card p.lead{color:var(--muted);margin:0 0 18px}
+.auth-card .form{grid-template-columns:1fr}
+.auth-card .btn.pri{width:100%;padding:11px}
+.auth-alt{margin-top:16px;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;font-size:13px;color:var(--muted)}
+.msg{border-radius:8px;padding:9px 12px;font-size:13px;margin-bottom:14px}
+.msg.err{background:var(--bad-soft);color:var(--bad)}
+.msg.ok{background:var(--good-soft);color:var(--good)}
+.setup ol{padding-left:20px;margin:0;display:flex;flex-direction:column;gap:6px}
+code{background:var(--surface-2);padding:1px 6px;border-radius:5px;font-size:12.5px}
+
+#toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:9px;font-weight:500;z-index:60;max-width:calc(100% - 32px)}
+
+@media (max-width:1080px){.g4{grid-template-columns:repeat(2,minmax(0,1fr))}.g3{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:860px){
+  .app{grid-template-columns:minmax(0,1fr)}
+  .nav{position:sticky;top:0;height:auto;flex-direction:row;align-items:center;overflow-x:auto;padding:8px 12px;border-right:0;border-bottom:1px solid var(--line);z-index:20;gap:2px}
+  .brand,.nav .foot .metaTxt{display:none}
+  .nav .foot{margin:0 0 0 auto;padding:0}
+  .me{border:0;padding:0}
+  .me .av,.me div{display:none}
+  .nav a{white-space:nowrap;padding:8px 10px}
+  .nav a svg{display:none}
+  .meta{grid-template-columns:minmax(0,1fr)}
+  .g2{grid-template-columns:minmax(0,1fr)}
+}
+@media (max-width:520px){
+  .g4,.g3{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+  .kpi .v{font-size:19px}
+  .meta .big{font-size:28px}
+  .form{grid-template-columns:minmax(0,1fr)}
+  .top h1{font-size:22px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<!-- ===== telas de acesso ===== -->
+<div class="auth" id="auth" hidden>
+  <div class="auth-card">
+    <div class="brand"><div class="mark">CI</div><div><b class="brandName">Controle Imob</b><small style="color:var(--muted)">Financeiro e vendas</small></div></div>
+    <div id="authBody"></div>
+  </div>
+</div>
+
+<!-- ===== sistema ===== -->
+<div class="app" id="appRoot" hidden>
+  <nav class="nav" id="nav" aria-label="Seções"></nav>
+  <main>
+    <div class="wrap">
+      <div class="top">
+        <div><h1 id="title">Painel</h1><div class="sub" id="subtitle"></div></div>
+        <div class="period" id="period">
+          <div class="seg" role="group" aria-label="Escopo">
+            <button type="button" data-esc="mes" id="escMes">Mês</button>
+            <button type="button" data-esc="ano" id="escAno">Ano</button>
+          </div>
+          <div class="mnav"><button type="button" id="prev" aria-label="Período anterior">‹</button><span id="perLabel"></span><button type="button" id="next" aria-label="Próximo período">›</button></div>
+          <span id="topAction"></span>
+        </div>
+      </div>
+      <div id="note" hidden></div>
+      <div id="view"></div>
+    </div>
+  </main>
+</div>
+<div class="overlay" id="modal" hidden><div class="sheet" id="sheet" role="dialog" aria-modal="true"></div></div>
+<div id="toast" hidden></div>
+
+<script src="config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+"use strict";
+/* ---------- constantes ---------- */
+const DEFAULT_CFG={nomeImob:"Controle Imob",meta:8000000,superMeta:12000000,periodoMeta:"anual",pctCorretor:3,pctImob:2.5,pctBonus:0.2,pctAgenc:0.3,
+  origens:["Instagram","Facebook / Meta Ads","Google","Portais (ZAP, VivaReal, OLX)","Site","Indicação","Placa","WhatsApp","Plantão","Carteira própria","Outros"]};
+const CAT_ENT=["Comissão de venda","Administração de aluguel","Outras entradas"];
+const CAT_SAI=["Repasse a corretor","Pagamento do caixa de bônus","Marketing e anúncios","Aluguel e condomínio","Salários e pró-labore","Impostos","Sistemas e portais","Outras saídas"];
+const MESES=["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
+const MESES_L=["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
+const COLS={corretores:"cor",vendas:"ven",agenciamentos:"ag",leads:"lead",lancamentos:"lanc"};
+const ICONS={
+  painel:'<rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/>',
+  vendas:'<path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/>',
+  corretores:'<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.5 3.4-5.5 6.5-5.5s5.7 2 6.5 5.5"/><circle cx="17.5" cy="9" r="2.5"/><path d="M17 14.5c2.3.2 3.9 1.8 4.5 4.5"/>',
+  leads:'<path d="M4 4h16l-6 8v6l-4 2v-8z"/>',
+  agenciamentos:'<path d="M4 21V5a2 2 0 0 1 2-2h8l6 6v12z"/><path d="M14 3v6h6"/><path d="M8 14h8M8 17h5"/>',
+  caixa:'<rect x="2.5" y="6" width="19" height="13" rx="2"/><path d="M2.5 10h19"/><path d="M16 15h2"/>',
+  usuarios:'<rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/>',
+  ajustes:'<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/>'};
+const VIEWS_G={painel:"Painel",vendas:"Vendas",corretores:"Corretores",leads:"Leads",agenciamentos:"Agenciamentos",caixa:"Entradas e saídas",usuarios:"Usuários",ajustes:"Ajustes"};
+const VIEWS_C={painel:"Meu painel",vendas:"Minhas vendas",leads:"Meus leads",agenciamentos:"Meus agenciamentos"};
+
+/* ---------- utilidades ---------- */
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const brl=n=>(+n||0).toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
+const brl0=n=>(+n||0).toLocaleString("pt-BR",{style:"currency",currency:"BRL",maximumFractionDigits:0});
+const brlS=n=>{n=+n||0;const a=Math.abs(n);if(a>=1e6)return"R$ "+(n/1e6).toLocaleString("pt-BR",{maximumFractionDigits:2})+" mi";if(a>=1e4)return"R$ "+(n/1e3).toLocaleString("pt-BR",{maximumFractionDigits:0})+" mil";return brl0(n)};
+const pctF=(x,d=1)=>((+x||0)*100).toLocaleString("pt-BR",{maximumFractionDigits:d})+"%";
+const numF=n=>(+n||0).toLocaleString("pt-BR");
+const fmtD=d=>d?String(d).slice(0,10).split("-").reverse().join("/"):"";
+function todayStr(){const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
+function parseMoney(s){if(typeof s==="number")return s;s=String(s||"").replace(/[R$\s]/g,"");if(!s)return 0;
+  if(s.includes(","))s=s.replace(/\./g,"").replace(",",".");else if((s.match(/\./g)||[]).length>1||/\.\d{3}$/.test(s))s=s.replace(/\./g,"");
+  const n=parseFloat(s);return isFinite(n)?n:0}
+const moneyIn=n=>n?(+n).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2}):"";
+const ini=n=>String(n||"?").trim().split(/\s+/).slice(0,2).map(p=>p[0]).join("").toUpperCase();
+const css=v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+function store(k,v){try{if(v===undefined)return localStorage.getItem(k);localStorage.setItem(k,v)}catch(e){return null}}
+const camelK=k=>k.replace(/_([a-z])/g,(_,c)=>c.toUpperCase());
+const snakeK=k=>k.replace(/[A-Z]/g,c=>"_"+c.toLowerCase());
+const camel=o=>{if(!o)return o;const r={};for(const k in o)r[camelK(k)]=o[k];return r};
+const snake=o=>{const r={};for(const k in o)if(k!=="id"&&o[k]!==undefined)r[snakeK(k)]=o[k];return r};
+
+/* ---------- estado ---------- */
+const S={sb:null,session:null,me:null,cor:[],ven:[],ag:[],lead:[],lanc:[],users:[],cfg:{...DEFAULT_CFG},equipe:null,
+  mes:(store("ci_mes")||todayStr().slice(0,7)),escopo:(store("ci_esc")||"mes"),view:"painel",charts:[],
+  fVenCor:"",fVenSt:"",fLancTipo:"",cfgDirty:false,recMap:{},repMap:{},ready:false};
+if(!/^\d{4}-\d{2}$/.test(S.mes))S.mes=todayStr().slice(0,7);
+if(!["mes","ano"].includes(S.escopo))S.escopo="mes";
+const isG=()=>!!S.me&&S.me.papel==="gestor";
+const meuCor=()=>S.me&&S.me.corretorId;
+const VIEWS=()=>isG()?VIEWS_G:VIEWS_C;
+
+const inPer=d=>!!d&&(S.escopo==="ano"?d.slice(0,4)===S.mes.slice(0,4):d.slice(0,7)===S.mes);
+const allTime=()=>true;
+const corNome=id=>{const c=S.cor.find(x=>x.id===id);return c?c.nome:(id?"(removido)":"—")};
+const ativos=()=>S.cor.filter(c=>c.ativo!==false).sort((a,b)=>a.nome.localeCompare(b.nome));
+const sortedCor=()=>[...S.cor].sort((a,b)=>(a.ativo===false)-(b.ativo===false)||a.nome.localeCompare(b.nome));
+
+/* ---------- cálculos ---------- */
+function derive(){S.recMap={};S.repMap={};
+  for(const l of S.lanc){if(l.vendaId&&l.tipo==="entrada")S.recMap[l.vendaId]=(S.recMap[l.vendaId]||0)+(+l.valor||0);
+    if(l.tipo==="saida"&&l.categoria==="Repasse a corretor"&&l.vendaId){const k=l.vendaId+"|"+(l.corretorId||"");S.repMap[k]=(S.repMap[k]||0)+(+l.valor||0)}}}
+function pctsOf(v){const c=v.pct||S.cfg;return{cor:+c.pctCorretor||0,imob:+c.pctImob||0,bonus:+c.pctBonus||0,ag:+c.pctAgenc||0}}
+function com(v){const p=pctsOf(v),x=+v.valor||0,hasAg=!!v.agenciadorId;
+  const cor=x*p.cor/100,bonus=x*p.bonus/100,agRaw=x*p.ag/100,imobBase=x*p.imob/100;
+  const total=cor+bonus+agRaw+imobBase,rec=S.recMap[v.id]||0,r=total>0?Math.min(1,rec/total):0;
+  return{total,cor,imob:imobBase+(hasAg?0:agRaw),bonus,ag:hasAg?agRaw:0,rec,pend:Math.max(0,total-rec),r,pctTotal:p.cor+p.imob+p.bonus+p.ag}}
+function statusV(v){const c=com(v);if(c.total<=0)return["mute","Sem comissão"];if(c.rec<=0.005)return["no","A receber"];if(c.pend>0.005)return["part","Parcial"];return["ok","Recebida"]}
+const sumQ=arr=>arr.reduce((s,l)=>s+(+l.quantidade||1),0);
+function statsCor(id,f=inPer){
+  const vs=S.ven.filter(v=>v.corretorId===id&&f(v.data)),va=S.ven.filter(v=>v.agenciadorId===id&&f(v.data));
+  let vgv=0,cv=0,rv=0,ca=0,ra=0;
+  vs.forEach(v=>{const c=com(v);vgv+=+v.valor||0;cv+=c.cor;rv+=c.cor*c.r});
+  va.forEach(v=>{const c=com(v);ca+=c.ag;ra+=c.ag*c.r});
+  const leads=S.lead.filter(l=>l.corretorId===id&&f(l.data)),origens={};
+  leads.forEach(l=>{const o=l.origem||"Outros";origens[o]=(origens[o]||0)+(+l.quantidade||1)});
+  const nLeads=sumQ(leads),rep=S.lanc.filter(l=>l.tipo==="saida"&&l.categoria==="Repasse a corretor"&&l.corretorId===id&&f(l.data)).reduce((s,l)=>s+(+l.valor||0),0);
+  return{vendas:vs,vendasAg:va,nVendas:vs.length,vgv,comVenda:cv,comAg:ca,comis:cv+ca,rec:rv+ra,pend:cv+ca-rv-ra,
+    ags:S.ag.filter(a=>a.corretorId===id&&f(a.data)).length,nLeads,origens,conv:nLeads?vs.length/nLeads:null,rep}}
+function totals(f=inPer){
+  const vs=S.ven.filter(v=>f(v.data));let vgv=0;const t={total:0,cor:0,imob:0,bonus:0,ag:0,rec:0,pend:0};
+  vs.forEach(v=>{vgv+=+v.valor||0;const c=com(v);for(const k in t)t[k]+=c[k]});
+  const lc=S.lanc.filter(l=>f(l.data)),ent=lc.filter(l=>l.tipo==="entrada").reduce((s,l)=>s+(+l.valor||0),0),
+    sai=lc.filter(l=>l.tipo==="saida").reduce((s,l)=>s+(+l.valor||0),0);
+  const leads=S.lead.filter(l=>f(l.data));
+  return{vendas:vs,nVendas:vs.length,vgv,...t,ent,sai,saldo:ent-sai,nLeads:sumQ(leads),leads,nAgs:S.ag.filter(a=>f(a.data)).length}}
+function bonusInfo(){let gerado=0,previsto=0;S.ven.forEach(v=>{const c=com(v);previsto+=c.bonus;gerado+=c.bonus*c.r});
+  const pago=S.lanc.filter(l=>l.tipo==="saida"&&l.categoria==="Pagamento do caixa de bônus").reduce((s,l)=>s+(+l.valor||0),0);
+  return{gerado,previsto,pago,saldo:gerado-pago}}
+function equipeMeses(){const y=+S.mes.slice(0,4);
+  if(S.equipe&&S.equipe.ano===y&&S.equipe.meses.length)return Array.from({length:12},(_,i)=>{const r=S.equipe.meses.find(x=>+x.mes===i+1)||{};return{vgv:+r.vgv||0,vendas:+r.vendas||0}});
+  return Array.from({length:12},(_,i)=>{const k=y+"-"+String(i+1).padStart(2,"0");const vs=S.ven.filter(v=>(v.data||"").startsWith(k));return{vgv:vs.reduce((s,v)=>s+(+v.valor||0),0),vendas:vs.length}})}
+function metaInfo(){const y=S.mes.slice(0,4),m=+S.mes.slice(5,7),em=equipeMeses();
+  const mensalCfg=S.cfg.periodoMeta==="mensal";
+  const anual=mensalCfg?(+S.cfg.meta||0)*12:+S.cfg.meta||0,superAnual=mensalCfg?(+S.cfg.superMeta||0)*12:+S.cfg.superMeta||0;
+  const vgvAno=em.reduce((s,x)=>s+x.vgv,0),vgvMes=em[m-1].vgv,vgvAteMes=em.slice(0,m).reduce((s,x)=>s+x.vgv,0);
+  const falta=Math.max(0,anual-vgvAteMes),depois=12-m;
+  return{y,m,em,anual,mensal:anual/12,superAnual,superMensal:superAnual/12,vgvAno,vgvMes,vgvAteMes,ritmo:anual/12*m,
+    falta,depois,porMes:depois>0?falta/depois:falta,vendasAno:em.reduce((s,x)=>s+x.vendas,0)}}
+
+/* ---------- Supabase: dados ---------- */
+async function fetchAll(t){let out=[],from=0;
+  for(;;){const{data,error}=await S.sb.from(t).select("*").range(from,from+999);if(error)throw error;out=out.concat(data||[]);if(!data||data.length<1000)break;from+=1000}
+  return out.map(camel)}
+async function loadTable(t){try{S[COLS[t]]=await fetchAll(t)}catch(e){showNote("Não foi possível carregar "+t+": "+e.message)}}
+async function loadConfig(){const{data,error}=await S.sb.from("config").select("dados").eq("id",1).maybeSingle();
+  if(!error&&data)S.cfg={...DEFAULT_CFG,...data.dados};if(!Array.isArray(S.cfg.origens)||!S.cfg.origens.length)S.cfg.origens=DEFAULT_CFG.origens}
+async function loadEquipe(){const y=+S.mes.slice(0,4);const{data,error}=await S.sb.rpc("resumo_equipe",{ano:y});if(!error)S.equipe={ano:y,meses:data||[]}}
+async function loadUsers(){if(!isG())return;try{S.users=await fetchAll("profiles")}catch(e){}}
+async function loadAll(){await Promise.all([...Object.keys(COLS).map(loadTable),loadConfig(),loadEquipe(),loadUsers()])}
+const pend=new Set();let pendT;
+function queueReload(t){pend.add(t);clearTimeout(pendT);pendT=setTimeout(async()=>{const ts=[...pend];pend.clear();
+  const jobs=[];for(const x of ts){if(COLS[x])jobs.push(loadTable(x));if(x==="config")jobs.push(loadConfig());if(x==="profiles")jobs.push(refreshMe())}
+  if(ts.some(x=>["vendas","leads","agenciamentos"].includes(x)))jobs.push(loadEquipe());
+  await Promise.all(jobs);render()},250)}
+async function refreshMe(){const{data}=await S.sb.from("profiles").select("*").eq("id",S.session.user.id).maybeSingle();
+  if(!data){await S.sb.auth.signOut();return}const me=camel(data);const mudou=!S.me||me.papel!==S.me.papel||me.aprovado!==S.me.aprovado||me.corretorId!==S.me.corretorId;
+  S.me=me;if(!me.aprovado||(me.papel==="corretor"&&!me.corretorId)){showWaiting();return}
+  if(mudou){await loadAll()}await loadUsers()}
+let channel=null;
+function subscribe(){if(channel)return;channel=S.sb.channel("imob-"+Math.random().toString(36).slice(2))
+  .on("postgres_changes",{event:"*",schema:"public"},p=>queueReload(p.table)).subscribe()}
+function errMsg(e){const m=(e&&(e.message||e.details))||"";
+  if(/row-level security|permission|42501/i.test(m+(e&&e.code)))return"Você não tem permissão para essa alteração.";
+  if(/foreign key|23503/i.test(m+(e&&e.code)))return"Esse registro está ligado a outros dados e não pode ser removido.";
+  return"Não foi possível salvar: "+(m||"erro desconhecido")}
+async function saveDoc(table,id,data){const body=snake(data);
+  const q=id?S.sb.from(table).update(body).eq("id",id):S.sb.from(table).insert(body);
+  const{error}=await q;if(error){toast(errMsg(error));return false}queueReload(table);return true}
+async function delDoc(table,id){const{error}=await S.sb.from(table).delete().eq("id",id);if(error){toast(errMsg(error));return false}queueReload(table);if(table==="vendas")queueReload("lancamentos");return true}
+
+/* ---------- autenticação ---------- */
+function authScreen(html){$("#appRoot").hidden=true;$("#auth").hidden=false;closeModal();$("#authBody").innerHTML=html;
+  document.querySelectorAll(".brandName").forEach(e=>e.textContent=S.cfg.nomeImob||"Controle Imob");
+  const f=$("#authBody input");if(f)f.focus()}
+const msgBox=(t,ok)=>`<div class="msg ${ok?"ok":"err"}">${esc(t)}</div>`;
+function authErr(e){const m=(e&&e.message)||"";
+  if(/invalid login/i.test(m))return"E-mail ou senha incorretos.";
+  if(/email not confirmed/i.test(m))return"Confirme seu e-mail antes de entrar. Procure a mensagem na sua caixa de entrada.";
+  if(/already registered/i.test(m))return"Esse e-mail já tem conta. Use “Entrar”.";
+  if(/password should be/i.test(m))return"A senha precisa ter pelo menos 6 caracteres.";
+  if(/rate limit/i.test(m))return"Muitas tentativas seguidas. Aguarde um minuto e tente de novo.";
+  return m||"Algo deu errado. Tente de novo."}
+function showSetup(){authScreen(`<div class="setup"><h1>Falta conectar o banco</h1><p class="lead">Este sistema usa o Supabase para login e dados. Para ligar:</p>
+  <ol><li>No Supabase, rode o arquivo <code>supabase/schema.sql</code> no SQL Editor.</li><li>Abra <code>config.js</code> e cole a <b>Project URL</b> e a chave <b>anon public</b> (Project Settings › API).</li><li>Publique de novo e recarregue esta página.</li></ol>
+  <p class="t2" style="margin-top:14px">O passo a passo completo está no arquivo LEIA-ME.md.</p></div>`)}
+function showLogin(msg,ok){authScreen(`<h1>Entrar</h1><p class="lead">Use seu e-mail e senha.</p>${msg?msgBox(msg,ok):""}
+  <form class="form" id="fLogin"><label>E-mail<input type="email" id="lEmail" autocomplete="username" required></label>
+  <label>Senha<input type="password" id="lPass" autocomplete="current-password" required></label><button class="btn pri" type="submit">Entrar</button></form>
+  <div class="auth-alt"><button class="link" data-auth="forgot">Esqueci a senha</button><span>Novo na equipe? <button class="link" data-auth="signup">Criar conta</button></span></div>`);
+  $("#fLogin").onsubmit=async e=>{e.preventDefault();const b=e.target.querySelector("button");b.disabled=true;b.textContent="Entrando…";
+    const email=$("#lEmail").value.trim();
+    const{data,error}=await S.sb.auth.signInWithPassword({email,password:$("#lPass").value});
+    if(error){showLogin(authErr(error));$("#lEmail").value=email;$("#lPass").focus();return}await enter(data.session)}}
+function showSignup(msg){authScreen(`<h1>Criar conta</h1><p class="lead">Depois de criar, o gestor libera seu acesso.</p>${msg?msgBox(msg):""}
+  <form class="form" id="fSign"><label>Seu nome<input id="sNome" autocomplete="name" required></label><label>E-mail<input type="email" id="sEmail" autocomplete="username" required></label>
+  <label>Senha <span class="hint">mínimo de 6 caracteres</span><input type="password" id="sPass" autocomplete="new-password" minlength="6" required></label><button class="btn pri" type="submit">Criar conta</button></form>
+  <div class="auth-alt"><span>Já tem conta? <button class="link" data-auth="login">Entrar</button></span></div>`);
+  $("#fSign").onsubmit=async e=>{e.preventDefault();const b=e.target.querySelector("button");b.disabled=true;b.textContent="Criando…";
+    const{data,error}=await S.sb.auth.signUp({email:$("#sEmail").value.trim(),password:$("#sPass").value,
+      options:{data:{nome:$("#sNome").value.trim()},emailRedirectTo:location.origin+location.pathname}});
+    if(error){showSignup(authErr(error));return}
+    if(data.session)await enter(data.session);else showLogin("Conta criada. Abra o e-mail de confirmação que enviamos e depois entre aqui.",true)}}
+function showForgot(msg,ok){authScreen(`<h1>Recuperar senha</h1><p class="lead">Enviamos um link para você criar uma senha nova.</p>${msg?msgBox(msg,ok):""}
+  <form class="form" id="fForgot"><label>E-mail<input type="email" id="fEmail" required></label><button class="btn pri" type="submit">Enviar link</button></form>
+  <div class="auth-alt"><button class="link" data-auth="login">Voltar para o login</button></div>`);
+  $("#fForgot").onsubmit=async e=>{e.preventDefault();const{error}=await S.sb.auth.resetPasswordForEmail($("#fEmail").value.trim(),{redirectTo:location.origin+location.pathname});
+    if(error)showForgot(authErr(error));else showForgot("Se esse e-mail tiver conta, o link chega em instantes. Confira também o spam.",true)}}
+function showNovaSenha(msg){authScreen(`<h1>Nova senha</h1><p class="lead">Escolha a senha que vai usar daqui para frente.</p>${msg?msgBox(msg):""}
+  <form class="form" id="fNova"><label>Nova senha<input type="password" id="nPass" autocomplete="new-password" minlength="6" required></label>
+  <label>Repita a senha<input type="password" id="nPass2" autocomplete="new-password" minlength="6" required></label><button class="btn pri" type="submit">Salvar senha</button></form>`);
+  $("#fNova").onsubmit=async e=>{e.preventDefault();if($("#nPass").value!==$("#nPass2").value){showNovaSenha("As duas senhas não são iguais.");return}
+    const{error}=await S.sb.auth.updateUser({password:$("#nPass").value});if(error){showNovaSenha(authErr(error));return}
+    S.recovery=false;history.replaceState(null,"",location.pathname);const{data}=await S.sb.auth.getSession();if(data.session)await enter(data.session);else showLogin("Senha alterada. Entre com a nova senha.",true)}}
+function showWaiting(){const nome=(S.me&&S.me.nome)||"";
+  const txt=S.me&&S.me.aprovado&&S.me.papel==="corretor"&&!S.me.corretorId?"Seu acesso foi liberado, mas ainda falta o gestor ligar sua conta ao seu cadastro de corretor.":"Sua conta foi criada e está aguardando o gestor liberar o acesso.";
+  authScreen(`<h1>Olá${nome?", "+esc(nome):""}</h1><p class="lead">${txt}</p><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn pri" data-auth="recheck">Verificar de novo</button><button class="btn" data-auth="logout">Sair</button></div>`)}
+async function enter(session){S.session=session;
+  const{data,error}=await S.sb.from("profiles").select("*").eq("id",session.user.id).maybeSingle();
+  if(error||!data){authScreen(`<h1>Perfil não encontrado</h1><p class="lead">Confira se o arquivo schema.sql foi rodado no Supabase antes de criar a conta.</p><button class="btn" data-auth="logout">Sair</button>`);return}
+  S.me=camel(data);
+  if(!S.me.aprovado||(S.me.papel==="corretor"&&!S.me.corretorId)){showWaiting();return}
+  await loadAll();subscribe();S.ready=true;
+  $("#auth").hidden=true;$("#appRoot").hidden=false;render()}
+document.addEventListener("click",async e=>{const b=e.target.closest("[data-auth]");if(!b)return;e.preventDefault();const a=b.dataset.auth;
+  if(a==="login")showLogin();if(a==="signup")showSignup();if(a==="forgot")showForgot();
+  if(a==="logout"){S.ready=false;if(channel){S.sb.removeChannel(channel);channel=null}await S.sb.auth.signOut();S.me=null;showLogin()}
+  if(a==="recheck"){const{data}=await S.sb.auth.getSession();if(data.session)await enter(data.session);else showLogin()}});
+
+/* ---------- UI base ---------- */
+let rq=0;function schedule(){if(rq)return;rq=requestAnimationFrame(()=>{rq=0;render()})}
+function showNote(t){const n=$("#note");n.className="note";n.textContent=t;n.hidden=false}
+let tt;function toast(t){const e=$("#toast");e.textContent=t;e.hidden=false;clearTimeout(tt);tt=setTimeout(()=>e.hidden=true,3600)}
+function perLabel(){const y=S.mes.slice(0,4),m=+S.mes.slice(5,7);return S.escopo==="ano"?"Ano de "+y:MESES_L[m-1]+" "+y}
+async function shift(d){const y0=S.mes.slice(0,4);let y=+y0,m=+S.mes.slice(5,7);if(S.escopo==="ano")y+=d;else{m+=d;if(m<1){m=12;y--}if(m>12){m=1;y++}}
+  S.mes=y+"-"+String(m).padStart(2,"0");store("ci_mes",S.mes);render();if(String(y)!==y0){await loadEquipe();render()}}
+function destroyCharts(){S.charts.forEach(c=>{try{c.destroy()}catch(e){}});S.charts=[]}
+
+function renderNav(){const V=VIEWS();
+  $("#nav").innerHTML=`<div class="brand"><div class="mark">CI</div><div><b>${esc(S.cfg.nomeImob||"Controle Imob")}</b><small>Financeiro e vendas</small></div></div>
+  ${Object.entries(V).map(([k,l])=>`<a href="#${k}" data-v="${k}" class="${S.view===k?"on":""}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">${ICONS[k]}</svg>${l}</a>`).join("")}
+  <div class="foot"><div class="metaTxt">Meta ${S.cfg.periodoMeta==="mensal"?"mensal":"anual"} da equipe<br><b style="color:var(--fg)">${esc(brlS(S.cfg.meta))}</b>${S.cfg.superMeta?`<br>Super meta <b style="color:var(--gold)">${esc(brlS(S.cfg.superMeta))}</b>`:""}</div>
+  <div class="me"><div class="av sm">${esc(ini(S.me.nome||S.me.email))}</div><div style="min-width:0;flex:1"><b>${esc(S.me.nome||S.me.email)}</b>${isG()?"Gestor":"Corretor"}</div><button class="btn sm ghost" data-auth="logout" title="Sair">Sair</button></div></div>`}
+
+function render(){
+  if(!S.ready||!S.me)return;
+  derive();
+  const V=VIEWS(),v=location.hash.replace("#","");S.view=V[v]?v:"painel";
+  renderNav();
+  document.title=(V[S.view]||"Painel")+" · "+(S.cfg.nomeImob||"Controle Imob");
+  $("#title").textContent=V[S.view];
+  $("#perLabel").textContent=perLabel();
+  $("#escMes").classList.toggle("on",S.escopo==="mes");$("#escAno").classList.toggle("on",S.escopo==="ano");
+  $("#period").style.visibility=["usuarios","ajustes"].includes(S.view)?"hidden":"visible";
+  const subs=isG()?{painel:"Resultado da equipe e do caixa no período",vendas:"Vendas fechadas, comissões recebidas e pendentes",corretores:"Resultado de cada corretor no período",
+    leads:"Leads recebidos por corretor e por origem",agenciamentos:"Imóveis captados pelos corretores",caixa:"Movimento financeiro da imobiliária",usuarios:"Quem acessa o sistema e o que pode fazer",ajustes:"Metas, divisão da comissão e origens de lead"}
+    :{painel:"Seu resultado e a meta da equipe",vendas:"Suas vendas e agenciamentos vendidos",leads:"Leads que você recebeu",agenciamentos:"Imóveis que você captou"};
+  $("#subtitle").textContent=subs[S.view]||"";
+  const acts=isG()?{vendas:["Nova venda","venda-nova"],corretores:["Novo corretor","cor-novo"],leads:["Registrar leads","lead-novo"],agenciamentos:["Novo agenciamento","ag-novo"],caixa:["Novo lançamento","lanc-novo"],painel:["Nova venda","venda-nova"]}
+    :{painel:["Registrar leads","lead-novo"],leads:["Registrar leads","lead-novo"],agenciamentos:["Novo agenciamento","ag-novo"]};
+  $("#topAction").innerHTML=acts[S.view]?`<button class="btn pri" data-a="${acts[S.view][1]}">+ ${acts[S.view][0]}</button>`:"";
+  if(S.view==="ajustes"&&S.cfgDirty)return;
+  destroyCharts();
+  const view=$("#view");
+  const fns={painel:isG()?vPainel:vPainelCor,vendas:vVendas,corretores:vCorretores,leads:vLeads,agenciamentos:vAgs,caixa:vCaixa,usuarios:vUsuarios,ajustes:vAjustes};
+  fns[S.view](view);
+}
+
+/* ---------- gráficos ---------- */
+function mkChart(id,cfg){const el=document.getElementById(id);if(!el||!window.Chart)return;
+  Chart.defaults.font.family="Inter, system-ui, sans-serif";Chart.defaults.color=css("--muted");Chart.defaults.borderColor=css("--line");
+  cfg.options=Object.assign({responsive:true,maintainAspectRatio:false,animation:{duration:400},plugins:{legend:{display:false}}},cfg.options||{});
+  S.charts.push(new Chart(el,cfg))}
+const moneyTick=v=>brlS(v);
+const tipMoney={callbacks:{label:c=>(c.dataset.label?c.dataset.label+": ":"")+brl(c.parsed.y??c.parsed.x)}};
+const chartBox=(id,cls="chart",emptyMsg)=>emptyMsg?`<div class="${cls}"><div class="empty-chart">${emptyMsg}</div></div>`:`<div class="${cls}"><canvas id="${id}"></canvas></div>`;
+const scY=(money)=>({y:{beginAtZero:true,ticks:money?{callback:moneyTick}:{precision:0},grid:{color:css("--line")}},x:{grid:{display:false}}});
+const scX=(money)=>({x:{beginAtZero:true,ticks:money?{callback:moneyTick}:{precision:0},grid:{color:css("--line")}},y:{grid:{display:false}}});
+function chartVgvMensal(mi){const acc=css("--accent"),fg=css("--fg");
+  mkChart("chVgv",{type:"bar",data:{labels:MESES,datasets:[
+    {type:"line",label:"Meta mensal",data:Array(12).fill(mi.mensal),borderColor:fg,borderDash:[5,4],borderWidth:1.5,pointRadius:0,order:0},
+    ...(mi.superMensal?[{type:"line",label:"Super meta mensal",data:Array(12).fill(mi.superMensal),borderColor:css("--gold"),borderDash:[2,3],borderWidth:2,pointRadius:0,order:0}]:[]),
+    {label:"VGV",data:mi.em.map(p=>p.vgv),backgroundColor:mi.em.map((p,i)=>i+1===mi.m?acc:acc+"99"),borderRadius:5,order:1}]},
+    options:{scales:scY(true),plugins:{legend:{display:false},tooltip:tipMoney}}})}
+
+/* ---------- blocos comuns ---------- */
+function kpi(lb,v,d,cls=""){return`<div class="card kpi ${cls}"><span class="lb">${lb}</span><span class="v">${v}</span><span class="d">${d}</span></div>`}
+function emptyBox(t,p,a,l){return`<div class="empty"><h3>${t}</h3><p>${p}</p>${a?`<button class="btn pri" data-a="${a}">${l}</button>`:""}</div>`}
+function metaCard(mi){
+  const mensalMain=S.cfg.periodoMeta==="mensal";
+  const pAno=mi.anual?mi.vgvAno/mi.anual:0,pMes=mi.mensal?mi.vgvMes/mi.mensal:0,ritmoP=mi.anual?mi.ritmo/mi.anual:0;
+  const big=mensalMain?mi.vgvMes:mi.vgvAno,bigMeta=mensalMain?mi.mensal:mi.anual,bigP=mensalMain?pMes:pAno;
+  const sb=big,sm=mensalMain?mi.superMensal:mi.superAnual,sp=sm?sb/sm:0;
+  return`<div class="card meta"><div>
+      <span class="lb">${mensalMain?"Meta do mês · "+MESES_L[mi.m-1]:"Meta da equipe · "+mi.y}</span>
+      <div class="big">${brl0(big)}</div>
+      <div class="of">de ${brl0(bigMeta)} · <b style="color:var(--fg)">${pctF(bigP)}</b> da meta em VGV</div>
+      <div class="bar"><i style="width:${Math.min(100,bigP*100)}%"></i>${mensalMain?"":`<span class="tick" style="left:${Math.min(100,ritmoP*100)}%"></span>`}</div>
+      ${mensalMain?"":`<div class="legend"><span><i style="background:var(--fg);opacity:.55;width:2px"></i>Onde a equipe deveria estar até ${MESES_L[mi.m-1]}: ${brlS(mi.ritmo)}</span></div>`}
+      ${sm?`<div style="margin-top:16px"><div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap"><span class="lb" style="color:var(--gold)">Super meta · ${brl0(sm)}</span><span class="num"><b>${pctF(sp)}</b> <span style="color:var(--muted)">· faltam ${brlS(Math.max(0,sm-sb))}</span></span></div>
+        <div class="bar thin"><i style="width:${Math.min(100,sp*100)}%;background:var(--gold)"></i></div></div>`:""}
+    </div>
+    <div class="facts">
+      <div class="fact"><div class="lb">VGV em ${MESES[mi.m-1]}</div><div class="v">${brlS(mi.vgvMes)}</div><div class="bar thin"><i style="width:${Math.min(100,pMes*100)}%"></i></div><div class="s">${pctF(pMes)} de ${brlS(mi.mensal)} no mês</div></div>
+      <div class="fact"><div class="lb">${mensalMain?"VGV no ano":"Falta para a meta"}</div><div class="v">${mensalMain?brlS(mi.vgvAno):brlS(Math.max(0,mi.anual-mi.vgvAno))}</div></div>
+      <div class="fact"><div class="lb">${mi.depois>0?"Necessário por mês":"Falta em Dezembro"}</div><div class="v">${mi.falta>0?brlS(mi.porMes):"Meta batida"}</div><div class="s">${mi.falta>0?(mi.depois>0?"nos "+mi.depois+" meses seguintes":"para fechar o ano"):"agora é a super meta"}</div></div>
+      <div class="fact"><div class="lb">Vendas da equipe no ano</div><div class="v">${mi.vendasAno}</div></div>
+    </div></div>`}
+const hbars=(arr,color,fmt=x=>x)=>{const mx=arr[0]?arr[0][1]:1;return arr.map(o=>`<div class="hbar"><span>${esc(o[0])}</span><div class="tr"><i style="width:${mx?o[1]/mx*100:0}%;${color?"background:"+color:""}"></i></div><span class="c">${fmt(o[1])}</span></div>`).join("")};
+
+/* ---------- PAINEL (gestor) ---------- */
+function vPainel(view){
+  const T=totals(),mi=metaInfo(),B=bonusInfo();
+  const noData=!S.ven.length&&!S.cor.length&&!S.lanc.length;
+  const y=mi.y;
+  const caixaMes=Array.from({length:12},(_,i)=>{const k=y+"-"+String(i+1).padStart(2,"0");
+    return{ent:S.lanc.filter(l=>l.tipo==="entrada"&&(l.data||"").startsWith(k)).reduce((s,l)=>s+(+l.valor||0),0),
+      sai:S.lanc.filter(l=>l.tipo==="saida"&&(l.data||"").startsWith(k)).reduce((s,l)=>s+(+l.valor||0),0)}});
+  const ranking=sortedCor().map(c=>({c,s:statsCor(c.id)})).filter(r=>r.c.ativo!==false||r.s.nVendas||r.s.nLeads).sort((a,b)=>b.s.vgv-a.s.vgv||b.s.nLeads-a.s.nLeads);
+  const origens={};T.leads.forEach(l=>{const o=l.origem||"Outros";origens[o]=(origens[o]||0)+(+l.quantidade||1)});
+  const orig=Object.entries(origens).sort((a,b)=>b[1]-a[1]);
+  const corVgv=ranking.filter(r=>r.s.vgv>0);
+  const conv=T.nLeads?T.nVendas/T.nLeads:null;
+  const dist=[["Corretores",T.cor,css("--accent")],["Imobiliária",T.imob,css("--blue")],["Agenciamento",T.ag,css("--muted")],["Caixa de bônus",T.bonus,css("--gold")]];
+  view.innerHTML=`
+  ${noData?`<div class="card empty"><h3>Comece cadastrando a equipe</h3><p>Cadastre os corretores, depois lance as vendas, leads e agenciamentos. O painel se monta sozinho a partir desses registros.</p><button class="btn pri" data-a="cor-novo">+ Cadastrar corretor</button></div>`:""}
+  ${metaCard(mi)}
+  <div class="grid g4">
+    ${kpi("VGV vendido",brlS(T.vgv),perLabel())}
+    ${kpi("Comissão gerada",brlS(T.total),T.vgv?pctF(T.total/T.vgv,2)+" do VGV":"—")}
+    ${kpi("Comissão recebida",brlS(T.rec),T.total?pctF(T.rec/T.total)+" do total":"—","good")}
+    ${kpi("A receber",brlS(T.pend),T.vendas.filter(v=>com(v).pend>0.005).length+" vendas pendentes",T.pend>0?"bad":"")}
+    ${kpi("Entradas no caixa",brlS(T.ent),"lançamentos de entrada","good")}
+    ${kpi("Saídas do caixa",brlS(T.sai),"lançamentos de saída")}
+    ${kpi("Saldo do período",brlS(T.saldo),"entradas menos saídas",T.saldo<0?"bad":"")}
+    ${kpi("Caixa de bônus",brlS(B.saldo),"previsto "+brlS(B.previsto-B.pago),"gold")}
+    ${kpi("Leads recebidos",numF(T.nLeads),orig[0]?"maior origem: "+esc(orig[0][0]):"sem leads no período")}
+    ${kpi("Agenciamentos",numF(T.nAgs),"captações no período")}
+    ${kpi("Conversão",conv==null?"—":pctF(conv),"vendas ÷ leads")}
+    ${kpi("Ticket médio",T.nVendas?brlS(T.vgv/T.nVendas):"—","valor médio por venda")}
+  </div>
+  <div class="card"><div class="hd"><h2>VGV por mês em ${y}</h2><small>barras: vendido · tracejado: meta de ${brlS(mi.mensal)}/mês${mi.superMensal?" · dourado: super meta de "+brlS(mi.superMensal)+"/mês":""}</small></div>${chartBox("chVgv","chart tall")}</div>
+  <div class="grid g2">
+    <div class="card"><div class="hd"><h2>Entradas e saídas · ${y}</h2></div>
+      <div class="legend" style="margin:-4px 0 8px"><span><i style="background:var(--good)"></i>Entradas</span><span><i style="background:var(--bad)"></i>Saídas</span></div>${chartBox("chCaixa")}</div>
+    <div class="card"><div class="hd"><h2>Leads por origem</h2><small>${perLabel()}</small></div>${chartBox("chOrig","chart",orig.length?"":"Nenhum lead registrado no período")}</div>
+    <div class="card"><div class="hd"><h2>VGV por corretor</h2><small>${perLabel()}</small></div>${chartBox("chCor","chart",corVgv.length?"":"Nenhuma venda no período")}</div>
+    <div class="card"><div class="hd"><h2>Para onde vai a comissão</h2><small>${perLabel()}</small></div>
+      ${T.total?`<div class="split">${dist.map(d=>`<i style="width:${d[1]/T.total*100}%;background:${d[2]}" title="${esc(d[0])}"></i>`).join("")}</div>
+      <table style="margin-top:10px"><tbody>${dist.map(d=>`<tr><td><span class="legend" style="margin:0"><span><i style="background:${d[2]}"></i>${d[0]}</span></span></td><td class="n">${brl(d[1])}</td><td class="n" style="color:var(--muted)">${pctF(d[1]/T.total)}</td></tr>`).join("")}
+      <tr><td><b>Total da comissão</b></td><td class="n"><b>${brl(T.total)}</b></td><td class="n" style="color:var(--muted)">${pctF(T.total/(T.vgv||1),2)} do VGV</td></tr></tbody></table>
+      <p class="t2" style="margin:8px 0 0">Venda sem agenciador: os ${numF(S.cfg.pctAgenc)}% do agenciamento ficam com a imobiliária.</p>`
+      :`<div class="chart" style="height:200px"><div class="empty-chart">Sem vendas no período</div></div>`}</div>
+  </div>
+  <div class="card"><div class="hd"><h2>Resultado por corretor</h2><small>${perLabel()} · ordenado por VGV</small></div>
+    ${ranking.length?`<div class="tbl-wrap"><table><thead><tr><th>#</th><th>Corretor</th><th class="n">Vendas</th><th class="n">VGV</th><th class="n">% da equipe</th><th class="n">Comissão</th><th class="n">Já entrou</th><th class="n">Pendente</th><th class="n">Agenc.</th><th class="n">Leads</th><th class="n">Conversão</th></tr></thead><tbody>
+    ${ranking.map((r,i)=>`<tr style="cursor:pointer" data-a="cor-ficha" data-id="${r.c.id}"><td><span class="rank ${i===0&&r.s.vgv>0?"r1":""}">${i+1}</span></td><td><b>${esc(r.c.nome)}</b></td><td class="n">${r.s.nVendas}</td><td class="n">${brl0(r.s.vgv)}</td><td class="n">${T.vgv?pctF(r.s.vgv/T.vgv):"—"}</td><td class="n">${brl(r.s.comis)}</td><td class="n" style="color:var(--good)">${brl(r.s.rec)}</td><td class="n" style="color:${r.s.pend>0.005?"var(--bad)":"var(--muted)"}">${brl(r.s.pend)}</td><td class="n">${r.s.ags}</td><td class="n">${r.s.nLeads}</td><td class="n">${r.s.conv==null?"—":pctF(r.s.conv)}</td></tr>`).join("")}
+    </tbody></table></div>`:`<div class="empty"><p>Nenhum corretor cadastrado.</p></div>`}
+  </div>`;
+  chartVgvMensal(mi);
+  mkChart("chCaixa",{type:"bar",data:{labels:MESES,datasets:[{label:"Entradas",data:caixaMes.map(p=>p.ent),backgroundColor:css("--good"),borderRadius:4},{label:"Saídas",data:caixaMes.map(p=>p.sai),backgroundColor:css("--bad"),borderRadius:4}]},options:{scales:scY(true),plugins:{legend:{display:false},tooltip:tipMoney}}});
+  if(orig.length)mkChart("chOrig",{type:"bar",data:{labels:orig.map(o=>o[0]),datasets:[{label:"Leads",data:orig.map(o=>o[1]),backgroundColor:css("--blue"),borderRadius:4}]},options:{indexAxis:"y",scales:scX(false)}});
+  if(corVgv.length)mkChart("chCor",{type:"bar",data:{labels:corVgv.map(r=>r.c.nome),datasets:[{label:"VGV",data:corVgv.map(r=>r.s.vgv),backgroundColor:css("--accent"),borderRadius:4}]},options:{indexAxis:"y",scales:scX(true),plugins:{legend:{display:false},tooltip:tipMoney}}});
+}
+
+/* ---------- PAINEL (corretor) ---------- */
+function vPainelCor(view){
+  const id=meuCor(),s=statsCor(id),mi=metaInfo(),sAno=statsCor(id,d=>!!d&&d.slice(0,4)===mi.y),all=statsCor(id,allTime);
+  const orig=Object.entries(s.origens).sort((a,b)=>b[1]-a[1]);
+  const vs=[...s.vendas,...s.vendasAg].sort((a,b)=>(b.data||"").localeCompare(a.data||""));
+  view.innerHTML=`${metaCard(mi)}
+  <div class="grid g4">
+    ${kpi("Você vendeu",brlS(s.vgv),s.nVendas+" vendas · "+perLabel())}
+    ${kpi("Sua parte na meta",mi.vgvAno?pctF(sAno.vgv/mi.vgvAno):"—","do VGV da equipe em "+mi.y)}
+    ${kpi("Sua comissão",brlS(s.comis),"venda "+brlS(s.comVenda)+" · agenc. "+brlS(s.comAg))}
+    ${kpi("Já entrou",brlS(s.rec),"repassado a você: "+brlS(s.rep),"good")}
+    ${kpi("Pendente",brlS(s.pend),"no período",s.pend>0.5?"bad":"")}
+    ${kpi("Pendente acumulado",brlS(all.pend),"todas as suas vendas",all.pend>0.5?"bad":"")}
+    ${kpi("Leads",numF(s.nLeads),s.conv==null?"sem leads no período":pctF(s.conv)+" de conversão")}
+    ${kpi("Agenciamentos",numF(s.ags),"captações no período")}
+  </div>
+  <div class="card"><div class="hd"><h2>VGV da equipe por mês em ${mi.y}</h2><small>tracejado: meta · dourado: super meta</small></div>${chartBox("chVgv","chart tall")}</div>
+  <div class="grid g2">
+    <div class="card"><div class="hd"><h2>Seus leads por origem</h2><small>${perLabel()}</small></div>${orig.length?hbars(orig):`<p class="t2">Nenhum lead registrado no período.</p>`}</div>
+    <div class="card"><div class="hd"><h2>Suas vendas</h2><small>${perLabel()}</small></div>${vs.length?`<div class="tbl-wrap"><table><tbody>${vs.map(v=>{const st=statusV(v),c=com(v),meu=v.corretorId===id?c.cor:c.ag;return`<tr><td class="num">${fmtD(v.data)}</td><td>${esc(v.imovel||"—")}${v.corretorId!==id?' <span class="t2">(agenciou)</span>':""}</td><td class="n">${brlS(v.valor)}<div class="t2">sua parte ${brl(meu)}</div></td><td><span class="pill ${st[0]}">${st[1]}</span></td></tr>`}).join("")}</tbody></table></div>`:`<p class="t2">Nenhuma venda no período.</p>`}</div>
+  </div>`;
+  chartVgvMensal(mi);
+}
+
+/* ---------- VENDAS ---------- */
+function vVendas(view){
+  const g=isG(),me=meuCor();
+  let vs=S.ven.filter(v=>inPer(v.data));
+  if(g&&S.fVenCor)vs=vs.filter(v=>v.corretorId===S.fVenCor||v.agenciadorId===S.fVenCor);
+  if(S.fVenSt)vs=vs.filter(v=>statusV(v)[1]===S.fVenSt);
+  vs.sort((a,b)=>(b.data||"").localeCompare(a.data||""));
+  let tv=0,tc=0,tr=0,tp=0;vs.forEach(v=>{const c=com(v);tv+=+v.valor||0;tc+=c.total;tr+=c.rec;tp+=c.pend});
+  const pendAll=S.ven.filter(v=>com(v).pend>0.005&&!inPer(v.data));
+  view.innerHTML=`
+  <div class="grid g4">${kpi("VGV",brlS(tv),vs.length+" vendas")}${kpi("Comissão total",brlS(tc),g?"":"da venda inteira")}${kpi("Recebido",brlS(tr),"","good")}${kpi("Pendente",brlS(tp),"",tp>0?"bad":"")}</div>
+  ${pendAll.length?`<div class="note">Há ${pendAll.length} venda(s) de outros períodos com comissão pendente, somando ${brl(pendAll.reduce((s,v)=>s+com(v).pend,0))}. Mude o período ou use “Ano” para vê-las.</div>`:""}
+  <div class="card">
+    <div class="hd"><div class="filters">
+      ${g?`<select id="fVenCor" aria-label="Filtrar por corretor"><option value="">Todos os corretores</option>${sortedCor().map(c=>`<option value="${c.id}" ${S.fVenCor===c.id?"selected":""}>${esc(c.nome)}</option>`).join("")}</select>`:""}
+      <select id="fVenSt" aria-label="Filtrar por situação"><option value="">Todas as situações</option>${["A receber","Parcial","Recebida"].map(s=>`<option ${S.fVenSt===s?"selected":""}>${s}</option>`).join("")}</select>
+    </div><small>${perLabel()}</small></div>
+    ${vs.length?`<div class="tbl-wrap"><table><thead><tr><th>Data</th><th>Imóvel / cliente</th><th>Corretor</th><th>Agenciador</th><th>Origem</th><th class="n">Valor</th><th class="n">Comissão</th>${g?"":`<th class="n">Sua parte</th>`}<th class="n">Recebido</th><th class="n">Pendente</th><th>Situação</th>${g?"<th></th>":""}</tr></thead><tbody>
+      ${vs.map(v=>{const c=com(v),st=statusV(v);return`<tr><td class="num">${fmtD(v.data)}</td><td><b>${esc(v.imovel||"—")}</b><div class="t2">${esc(v.cliente||"")}</div></td><td>${esc(corNome(v.corretorId))}</td><td>${v.agenciadorId?esc(corNome(v.agenciadorId)):'<span class="t2">Imobiliária</span>'}</td><td>${esc(v.origem||"—")}</td>
+      <td class="n">${brl0(v.valor)}</td><td class="n">${brl(c.total)}<div class="t2">${numF(c.pctTotal)}%</div></td>${g?"":`<td class="n">${brl((v.corretorId===me?c.cor:0)+(v.agenciadorId===me?c.ag:0))}</td>`}<td class="n">${brl(c.rec)}</td><td class="n">${brl(c.pend)}</td><td><span class="pill ${st[0]}">${st[1]}</span></td>
+      ${g?`<td class="act">${c.pend>0.005?`<button class="btn sm pri" data-a="receber" data-id="${v.id}">Receber</button> `:""}<button class="btn sm" data-a="repasse" data-id="${v.id}">Repassar</button> <button class="btn sm ghost" data-a="venda-edit" data-id="${v.id}">Editar</button></td>`:""}</tr>`}).join("")}
+      </tbody><tfoot><tr><td colspan="5">Total</td><td class="n">${brl0(tv)}</td><td class="n">${brl(tc)}</td>${g?"":"<td></td>"}<td class="n">${brl(tr)}</td><td class="n">${brl(tp)}</td><td ${g?'colspan="2"':""}></td></tr></tfoot></table></div>`
+    :g?emptyBox("Nenhuma venda em "+perLabel().toLowerCase(),"Lance a venda com o valor do imóvel; a comissão é dividida automaticamente entre corretor, imobiliária, agenciamento e caixa de bônus.","venda-nova","+ Lançar venda")
+      :emptyBox("Nenhuma venda em "+perLabel().toLowerCase(),"As vendas são lançadas pelo gestor e aparecem aqui assim que forem registradas.")}
+  </div>`;
+  if($("#fVenCor"))$("#fVenCor").onchange=e=>{S.fVenCor=e.target.value;render()};$("#fVenSt").onchange=e=>{S.fVenSt=e.target.value;render()};
+}
+
+/* ---------- CORRETORES ---------- */
+function vCorretores(view){
+  const list=sortedCor();
+  if(!list.length){view.innerHTML=`<div class="card">${emptyBox("Nenhum corretor cadastrado","Cadastre cada corretor da equipe. Depois é só lançar vendas, leads e agenciamentos para ele.","cor-novo","+ Cadastrar corretor")}</div>`;return}
+  const T=totals();
+  view.innerHTML=`<div class="cor-grid">${list.map(c=>{const s=statsCor(c.id),u=S.users.find(x=>x.corretorId===c.id);return`<div class="card cor ${c.ativo===false?"off":""}" data-a="cor-ficha" data-id="${c.id}" tabindex="0" role="button">
+    <div class="who"><div class="av">${esc(ini(c.nome))}</div><div style="min-width:0"><b>${esc(c.nome)}</b><small>${c.ativo===false?"Inativo":u?"Tem acesso ao sistema":"Sem acesso ao sistema"}</small></div></div>
+    <div class="stats">
+      <div><span>Vendeu</span><strong>${brlS(s.vgv)}</strong></div><div><span>Vendas</span><strong>${s.nVendas}${T.vgv&&s.vgv?` <small style="color:var(--muted);font-weight:500">· ${pctF(s.vgv/T.vgv)}</small>`:""}</strong></div>
+      <div><span>Já entrou</span><strong style="color:var(--good)">${brl0(s.rec)}</strong></div><div><span>Pendente</span><strong style="color:${s.pend>0.5?"var(--bad)":"inherit"}">${brl0(s.pend)}</strong></div>
+      <div><span>Agenciamentos</span><strong>${s.ags}</strong></div><div><span>Leads</span><strong>${s.nLeads}${s.conv!=null?` <small style="color:var(--muted);font-weight:500">· ${pctF(s.conv)}</small>`:""}</strong></div>
+    </div></div>`}).join("")}</div>`;
+}
+function fichaCor(id){
+  const c=S.cor.find(x=>x.id===id);if(!c)return;
+  const s=statsCor(id),all=statsCor(id,allTime);
+  const orig=Object.entries(s.origens).sort((a,b)=>b[1]-a[1]);
+  const vs=[...s.vendas].sort((a,b)=>(b.data||"").localeCompare(a.data||""));
+  openModal(`<div class="who" style="margin-bottom:16px"><div class="av">${esc(ini(c.nome))}</div><div><h2 style="margin:0">${esc(c.nome)}</h2><small style="color:var(--muted)">${perLabel()}${c.telefone?" · "+esc(c.telefone):""}${c.creci?" · CRECI "+esc(c.creci):""}</small></div></div>
+  <div class="grid g3" style="margin-bottom:14px">
+    ${kpi("Vendeu",brlS(s.vgv),s.nVendas+" vendas")}${kpi("Comissão",brlS(s.comis),"venda "+brlS(s.comVenda)+" · agenc. "+brlS(s.comAg))}${kpi("Já entrou",brlS(s.rec),"repassado "+brlS(s.rep),"good")}
+    ${kpi("Pendente no período",brlS(s.pend),"",s.pend>0.5?"bad":"")}${kpi("Pendente acumulado",brlS(all.pend),"todas as vendas",all.pend>0.5?"bad":"")}${kpi("Leads · agenc.",s.nLeads+" · "+s.ags,s.conv==null?"sem leads":pctF(s.conv)+" de conversão")}
+  </div>
+  <div class="grid g2">
+    <div><h3 style="font-size:14px;margin-bottom:8px">Leads por origem</h3>${orig.length?hbars(orig):`<p class="t2">Nenhum lead no período.</p>`}</div>
+    <div><h3 style="font-size:14px;margin-bottom:8px">Vendas no período</h3>${vs.length||s.vendasAg.length?`<table><tbody>${vs.map(v=>{const st=statusV(v);return`<tr><td class="num">${fmtD(v.data)}</td><td>${esc(v.imovel||"—")}</td><td class="n">${brlS(v.valor)}</td><td><span class="pill ${st[0]}">${st[1]}</span></td></tr>`}).join("")}${s.vendasAg.map(v=>`<tr><td class="num">${fmtD(v.data)}</td><td>${esc(v.imovel||"—")} <span class="t2">(agenciou)</span></td><td class="n">${brlS(v.valor)}</td><td><span class="pill ${statusV(v)[0]}">${statusV(v)[1]}</span></td></tr>`).join("")}</tbody></table>`:`<p class="t2">Nenhuma venda no período.</p>`}</div>
+  </div>
+  <div class="foot"><button class="btn ghost" data-a="close">Fechar</button><div class="r">${isG()?`<button class="btn" data-a="cor-edit" data-id="${id}">Editar cadastro</button>`:""}</div></div>`,true);
+}
+
+/* ---------- LEADS ---------- */
+function vLeads(view){
+  const g=isG();
+  const ls=S.lead.filter(l=>inPer(l.data)).sort((a,b)=>(b.data||"").localeCompare(a.data||""));
+  const byO={},byC={};ls.forEach(l=>{const q=+l.quantidade||1;byO[l.origem||"Outros"]=(byO[l.origem||"Outros"]||0)+q;byC[l.corretorId]=(byC[l.corretorId]||0)+q});
+  const oA=Object.entries(byO).sort((a,b)=>b[1]-a[1]),cA=Object.entries(byC).sort((a,b)=>b[1]-a[1]).map(x=>[corNome(x[0]),x[1]]);
+  view.innerHTML=`
+  <div class="grid ${g?"g2":""}">
+    <div class="card"><div class="hd"><h2>Por origem</h2><small>${sumQ(ls)} leads · ${perLabel()}</small></div>${oA.length?hbars(oA):`<p class="t2">Sem leads no período.</p>`}</div>
+    ${g?`<div class="card"><div class="hd"><h2>Por corretor</h2><small>${perLabel()}</small></div>${cA.length?hbars(cA,"var(--accent)"):`<p class="t2">Sem leads no período.</p>`}</div>`:""}
+  </div>
+  <div class="card"><div class="hd"><h2>Registros</h2><small>${perLabel()}</small></div>
+  ${ls.length?`<div class="tbl-wrap"><table><thead><tr><th>Data</th>${g?"<th>Corretor</th>":""}<th>Origem</th><th class="n">Qtd.</th><th>Cliente / obs.</th><th></th></tr></thead><tbody>
+  ${ls.map(l=>`<tr><td class="num">${fmtD(l.data)}</td>${g?`<td>${esc(corNome(l.corretorId))}</td>`:""}<td>${esc(l.origem||"—")}</td><td class="n">${+l.quantidade||1}</td><td>${esc(l.cliente||"")}<div class="t2">${esc(l.obs||"")}</div></td><td class="act"><button class="btn sm ghost" data-a="lead-edit" data-id="${l.id}">Editar</button></td></tr>`).join("")}
+  </tbody></table></div>`:emptyBox("Nenhum lead registrado",g?"Registre os leads que cada corretor recebeu e de onde vieram. Pode lançar um por vez ou a quantidade do dia de uma vez.":"Registre os leads que você recebeu e de onde vieram. Pode lançar um por vez ou a quantidade do dia de uma vez.","lead-novo","+ Registrar leads")}</div>`;
+}
+
+/* ---------- AGENCIAMENTOS ---------- */
+function vAgs(view){
+  const g=isG();
+  const as=S.ag.filter(a=>inPer(a.data)).sort((a,b)=>(b.data||"").localeCompare(a.data||""));
+  const byC={};as.forEach(a=>byC[a.corretorId]=(byC[a.corretorId]||0)+1);const cA=Object.entries(byC).sort((a,b)=>b[1]-a[1]).map(x=>[corNome(x[0]),x[1]]);
+  const valor=as.reduce((s,a)=>s+(+a.valor||0),0);
+  view.innerHTML=`
+  <div class="grid g3">${kpi("Agenciamentos",numF(as.length),perLabel())}${kpi("Valor captado",brlS(valor),"soma dos valores anunciados")}${kpi("Comissão de agenciamento",brlS(g?totals().ag:statsCor(meuCor()).comAg),"vendas com agenciador no período","gold")}</div>
+  ${g&&cA.length?`<div class="card"><div class="hd"><h2>Por corretor</h2></div>${hbars(cA,"var(--accent)")}</div>`:""}
+  <div class="card"><div class="hd"><h2>Imóveis captados</h2><small>${perLabel()}</small></div>
+  ${as.length?`<div class="tbl-wrap"><table><thead><tr><th>Data</th><th>Imóvel</th>${g?"<th>Corretor</th>":""}<th>Finalidade</th><th class="n">Valor</th><th></th></tr></thead><tbody>
+  ${as.map(a=>`<tr><td class="num">${fmtD(a.data)}</td><td><b>${esc(a.imovel||"—")}</b><div class="t2">${esc(a.obs||"")}</div></td>${g?`<td>${esc(corNome(a.corretorId))}</td>`:""}<td>${esc(a.finalidade||"Venda")}</td><td class="n">${a.valor?brl0(a.valor):"—"}</td><td class="act"><button class="btn sm ghost" data-a="ag-edit" data-id="${a.id}">Editar</button></td></tr>`).join("")}
+  </tbody></table></div>`:emptyBox("Nenhum agenciamento no período","Registre cada imóvel captado. Quando ele for vendido, o agenciador recebe a parte do agenciamento.","ag-novo","+ Novo agenciamento")}</div>`;
+}
+
+/* ---------- CAIXA ---------- */
+function vCaixa(view){
+  let ls=S.lanc.filter(l=>inPer(l.data));const T=totals(),B=bonusInfo();
+  const cats={};ls.forEach(l=>{const k=l.tipo+"|"+(l.categoria||"Outros");cats[k]=(cats[k]||0)+(+l.valor||0)});
+  const ent=Object.entries(cats).filter(c=>c[0].startsWith("entrada")).sort((a,b)=>b[1]-a[1]).map(c=>[c[0].split("|")[1],c[1]]),
+        sai=Object.entries(cats).filter(c=>c[0].startsWith("saida")).sort((a,b)=>b[1]-a[1]).map(c=>[c[0].split("|")[1],c[1]]);
+  if(S.fLancTipo)ls=ls.filter(l=>l.tipo===S.fLancTipo);ls.sort((a,b)=>(b.data||"").localeCompare(a.data||""));
+  view.innerHTML=`
+  <div class="grid g4">${kpi("Entradas",brlS(T.ent),perLabel(),"good")}${kpi("Saídas",brlS(T.sai),perLabel(),"bad")}${kpi("Saldo",brlS(T.saldo),"entradas menos saídas",T.saldo<0?"bad":"")}${kpi("Caixa de bônus",brlS(B.saldo),"acumulado "+brlS(B.gerado)+" · pago "+brlS(B.pago),"gold")}</div>
+  <div class="grid g2"><div class="card"><div class="hd"><h2>Entradas por categoria</h2></div>${ent.length?hbars(ent,"var(--good)",brlS):`<p class="t2">Nada lançado.</p>`}</div><div class="card"><div class="hd"><h2>Saídas por categoria</h2></div>${sai.length?hbars(sai,"var(--bad)",brlS):`<p class="t2">Nada lançado.</p>`}</div></div>
+  <div class="card"><div class="hd"><div class="seg" role="group" aria-label="Tipo">${[["","Tudo"],["entrada","Entradas"],["saida","Saídas"]].map(t=>`<button type="button" class="${S.fLancTipo===t[0]?"on":""}" data-a="ftipo" data-id="${t[0]}">${t[1]}</button>`).join("")}</div><small>${perLabel()}</small></div>
+  ${ls.length?`<div class="tbl-wrap"><table><thead><tr><th>Data</th><th>Descrição</th><th>Categoria</th><th>Vínculo</th><th class="n">Valor</th><th></th></tr></thead><tbody>
+  ${ls.map(l=>{const v=l.vendaId?S.ven.find(x=>x.id===l.vendaId):null;return`<tr><td class="num">${fmtD(l.data)}</td><td>${esc(l.descricao||"—")}</td><td><span class="pill ${l.tipo==="entrada"?"ok":"no"}">${l.tipo==="entrada"?"Entrada":"Saída"}</span> <span class="t2">${esc(l.categoria||"")}</span></td><td>${v?esc(v.imovel||"Venda"):""}${l.corretorId?`<div class="t2">${esc(corNome(l.corretorId))}</div>`:""}</td><td class="n" style="color:${l.tipo==="entrada"?"var(--good)":"var(--bad)"}">${l.tipo==="entrada"?"+":"−"} ${brl(l.valor)}</td><td class="act"><button class="btn sm ghost" data-a="lanc-edit" data-id="${l.id}">Editar</button></td></tr>`}).join("")}
+  </tbody></table></div>`:emptyBox("Nenhum lançamento no período","Registre as entradas e saídas da imobiliária. O recebimento de comissão pode ser lançado direto na tela de Vendas.","lanc-novo","+ Novo lançamento")}</div>`;
+}
+
+/* ---------- USUÁRIOS ---------- */
+function vUsuarios(view){
+  const us=[...S.users].sort((a,b)=>(a.aprovado-b.aprovado)||String(a.nome).localeCompare(String(b.nome)));
+  const aguard=us.filter(u=>!u.aprovado||(u.papel==="corretor"&&!u.corretorId)).length;
+  view.innerHTML=`
+  ${aguard?`<div class="note">${aguard} pessoa(s) aguardando liberação. Escolha o perfil, ligue ao cadastro de corretor e clique em Liberar.</div>`:""}
+  <div class="card"><div class="hd"><h2>Quem acessa o sistema</h2><small>${us.length} conta(s)</small></div>
+  <div class="tbl-wrap"><table><thead><tr><th>Pessoa</th><th>Perfil</th><th>Cadastro de corretor</th><th>Situação</th><th></th></tr></thead><tbody>
+  ${us.map(u=>{const eu=u.id===S.me.id;return`<tr data-uid="${u.id}"><td><b>${esc(u.nome||"—")}</b>${eu?' <span class="t2">(você)</span>':""}<div class="t2">${esc(u.email||"")}</div></td>
+    <td><select data-f="papel" ${eu?"disabled":""}><option value="corretor" ${u.papel==="corretor"?"selected":""}>Corretor</option><option value="gestor" ${u.papel==="gestor"?"selected":""}>Gestor</option></select></td>
+    <td><select data-f="corretor"><option value="">— nenhum —</option>${sortedCor().map(c=>`<option value="${c.id}" ${c.id===u.corretorId?"selected":""}>${esc(c.nome)}</option>`).join("")}<option value="__novo">+ Criar corretor “${esc(u.nome||"")}”</option></select></td>
+    <td>${u.aprovado?'<span class="pill ok">Liberado</span>':'<span class="pill part">Aguardando</span>'}</td>
+    <td class="act">${eu?`<button class="btn sm" data-a="user-save" data-id="${u.id}">Salvar</button>`:u.aprovado?`<button class="btn sm" data-a="user-save" data-id="${u.id}">Salvar</button> <button class="btn sm danger" data-a="user-block" data-id="${u.id}">Bloquear</button>`:`<button class="btn sm pri" data-a="user-ok" data-id="${u.id}">Liberar</button>`}</td></tr>`}).join("")}
+  </tbody></table></div>
+  <p class="t2" style="margin:12px 0 0">Para dar acesso a alguém: peça para a pessoa abrir este endereço e clicar em “Criar conta”. Ela aparece aqui como aguardando. <b>Gestor</b> vê e altera tudo. <b>Corretor</b> vê só as próprias vendas, a meta da equipe, e lança os próprios leads e agenciamentos.</p></div>`;
+}
+async function saveUser(uid,aprovar){const tr=document.querySelector(`tr[data-uid="${uid}"]`);const u=S.users.find(x=>x.id===uid);if(!tr||!u)return;
+  const papel=tr.querySelector('[data-f="papel"]').value;let corretorId=tr.querySelector('[data-f="corretor"]').value||null;
+  if(papel==="corretor"&&!corretorId){toast("Escolha o cadastro de corretor dessa pessoa (ou crie um).");return}
+  if(corretorId==="__novo"){const{data,error}=await S.sb.from("corretores").insert({nome:u.nome||u.email}).select().single();if(error){toast(errMsg(error));return}corretorId=data.id;queueReload("corretores")}
+  const body={papel,corretor_id:corretorId};if(aprovar!==undefined)body.aprovado=aprovar;if(uid===S.me.id){delete body.papel;delete body.aprovado}
+  const{error}=await S.sb.from("profiles").update(body).eq("id",uid);if(error){toast(errMsg(error));return}
+  toast(aprovar===true?"Acesso liberado":aprovar===false?"Acesso bloqueado":"Usuário atualizado");queueReload("profiles")}
+
+/* ---------- AJUSTES ---------- */
+function vAjustes(view){
+  const c=S.cfg,soma=(+c.pctCorretor)+(+c.pctImob)+(+c.pctBonus)+(+c.pctAgenc);
+  view.innerHTML=`<div class="card" style="max-width:720px"><form id="cfgForm" class="form">
+    <label class="full">Nome da imobiliária<input id="cfgNome" value="${esc(c.nomeImob)}"></label>
+    <label>Meta da equipe (VGV)<input id="cfgMeta" inputmode="decimal" value="${moneyIn(c.meta)}"></label>
+    <label>Super meta (VGV)<input id="cfgSuper" inputmode="decimal" value="${moneyIn(c.superMeta)}"></label>
+    <label>As metas são<select id="cfgPer"><option value="anual" ${c.periodoMeta!=="mensal"?"selected":""}>Anuais</option><option value="mensal" ${c.periodoMeta==="mensal"?"selected":""}>Mensais</option></select></label>
+    <div class="full" style="font-weight:600;color:var(--fg);margin-top:6px">Divisão da comissão (% sobre o valor da venda)</div>
+    <label>Corretor (venda)<input id="cfgCor" type="number" step="0.01" min="0" value="${c.pctCorretor}"></label>
+    <label>Imobiliária<input id="cfgImob" type="number" step="0.01" min="0" value="${c.pctImob}"></label>
+    <label>Caixa de bônus<input id="cfgBonus" type="number" step="0.01" min="0" value="${c.pctBonus}"></label>
+    <label>Agenciamento<input id="cfgAg" type="number" step="0.01" min="0" value="${c.pctAgenc}"></label>
+    <div class="full preview">Comissão total: <b>${numF(soma)}%</b> do valor da venda. Numa venda de R$ 500.000: corretor ${brl(5000*c.pctCorretor)}, imobiliária ${brl(5000*c.pctImob)}, agenciamento ${brl(5000*c.pctAgenc)}, caixa de bônus ${brl(5000*c.pctBonus)}.</div>
+    <label class="full">Origens de lead <span class="hint">uma por linha</span><textarea id="cfgOrig" rows="8">${esc(c.origens.join("\n"))}</textarea></label>
+    <p class="full t2" style="margin:0">Mudar os percentuais vale para vendas novas. Cada venda guarda a divisão do dia em que foi lançada.</p>
+    <div class="full" style="display:flex;gap:8px;justify-content:flex-end"><button type="button" class="btn ghost" id="cfgReset">Descartar alterações</button><button class="btn pri" type="submit">Salvar ajustes</button></div>
+  </form></div>`;
+  const f=$("#cfgForm");f.oninput=()=>{S.cfgDirty=true};
+  $("#cfgReset").onclick=()=>{S.cfgDirty=false;render()};
+  f.onsubmit=async e=>{e.preventDefault();
+    const data={...S.cfg,nomeImob:$("#cfgNome").value.trim()||"Controle Imob",meta:parseMoney($("#cfgMeta").value),superMeta:parseMoney($("#cfgSuper").value),periodoMeta:$("#cfgPer").value,
+      pctCorretor:+$("#cfgCor").value||0,pctImob:+$("#cfgImob").value||0,pctBonus:+$("#cfgBonus").value||0,pctAgenc:+$("#cfgAg").value||0,
+      origens:$("#cfgOrig").value.split("\n").map(s=>s.trim()).filter(Boolean)};
+    if(!data.origens.length)data.origens=DEFAULT_CFG.origens;
+    const{error}=await S.sb.from("config").update({dados:data}).eq("id",1);
+    if(error){toast(errMsg(error));return}S.cfgDirty=false;S.cfg=data;toast("Ajustes salvos");render()};
+}
+
+/* ---------- modais e formulários ---------- */
+function openModal(html,wide=false){const sh=$("#sheet");sh.className="sheet"+(wide?" wide":"");sh.innerHTML=html;$("#modal").hidden=false;
+  const first=sh.querySelector("input:not([type=hidden]),select,textarea");if(first)setTimeout(()=>first.focus(),30)}
+function closeModal(){$("#modal").hidden=true;$("#sheet").innerHTML=""}
+const corOpts=(sel,incl)=>{let l=sortedCor().filter(c=>c.ativo!==false||c.id===sel||incl);if(!isG())l=l.filter(c=>c.id===meuCor());
+  return l.map(c=>`<option value="${c.id}" ${c.id===sel?"selected":""}>${esc(c.nome)}${c.ativo===false?" (inativo)":""}</option>`).join("")};
+const origOpts=sel=>{const l=[...S.cfg.origens];if(sel&&!l.includes(sel))l.push(sel);return l.map(o=>`<option ${o===sel?"selected":""}>${esc(o)}</option>`).join("")};
+const defDate=()=>{const t=todayStr();return S.escopo==="mes"&&t.slice(0,7)!==S.mes?S.mes+"-01":t};
+function footBtns(col,id,extra=""){return`<div class="foot">${id?`<button type="button" class="btn danger" data-a="del" data-col="${col}" data-id="${id}">Excluir</button>`:""}${extra}<div class="r"><button type="button" class="btn ghost" data-a="close">Cancelar</button><button class="btn pri" type="submit">Salvar</button></div></div>`}
+function needCor(){if(!isG())return!!meuCor();if(!ativos().length){toast("Cadastre um corretor primeiro.");location.hash="#corretores";openCor();return false}return true}
+
+function openCor(id){const c=id?S.cor.find(x=>x.id===id):{};
+  openModal(`<h2>${id?"Editar corretor":"Novo corretor"}</h2><form class="form" id="f">
+  <label class="full">Nome<input id="fNome" required value="${esc(c.nome||"")}"></label>
+  <label>Telefone<input id="fTel" value="${esc(c.telefone||"")}"></label><label>CRECI<input id="fCreci" value="${esc(c.creci||"")}"></label>
+  ${id?`<label class="full" style="flex-direction:row;align-items:center;gap:8px;color:var(--fg)"><input type="checkbox" id="fAtivo" style="width:auto" ${c.ativo!==false?"checked":""}> Corretor ativo na equipe</label>`:""}
+  </form>${footBtns("corretores",id)}`);
+  bindSubmit(async()=>{const nome=$("#fNome").value.trim();if(!nome){toast("Informe o nome do corretor.");return false}
+    return saveDoc("corretores",id,{nome,telefone:$("#fTel").value.trim(),creci:$("#fCreci").value.trim(),ativo:id?$("#fAtivo").checked:true})},id?"Corretor atualizado":"Corretor cadastrado")}
+
+function openVenda(id){if(!id&&!needCor())return;const v=id?S.ven.find(x=>x.id===id):{data:defDate()};
+  openModal(`<h2>${id?"Editar venda":"Nova venda"}</h2><form class="form" id="f">
+  <label>Data da venda<input type="date" id="fData" required value="${esc(v.data||"")}"></label>
+  <label>Valor da venda (R$)<input id="fValor" inputmode="decimal" required placeholder="0,00" value="${moneyIn(v.valor)}"></label>
+  <label class="full">Imóvel<input id="fImovel" placeholder="Ex.: Apto 302, Ed. Solar – Centro" value="${esc(v.imovel||"")}"></label>
+  <label>Cliente comprador<input id="fCliente" value="${esc(v.cliente||"")}"></label>
+  <label>Origem do lead<select id="fOrigem"><option value="">—</option>${origOpts(v.origem)}</select></label>
+  <label>Corretor da venda<select id="fCor" required>${corOpts(v.corretorId)}</select></label>
+  <label>Agenciador (captou o imóvel)<select id="fAg"><option value="">Sem agenciador · fica com a imob</option>${corOpts(v.agenciadorId)}</select></label>
+  <label class="full">Observações<textarea id="fObs" rows="2">${esc(v.obs||"")}</textarea></label>
+  <div class="full preview" id="prev"></div></form>${footBtns("vendas",id,id?`<span class="t2" style="align-self:center">Excluir remove também os recebimentos dessa venda.</span>`:"")}`);
+  const pv=()=>{const x={...v,valor:parseMoney($("#fValor").value),agenciadorId:$("#fAg").value};const c=com(x),p=pctsOf(x);
+    $("#prev").innerHTML=`<div class="row"><span>Corretor (${numF(p.cor)}%)</span><b>${brl(c.cor)}</b></div><div class="row"><span>Imobiliária (${numF(p.imob)}%${x.agenciadorId?"":" + "+numF(p.ag)+"% agenc."})</span><b>${brl(c.imob)}</b></div>${x.agenciadorId?`<div class="row"><span>Agenciamento (${numF(p.ag)}%)</span><b>${brl(c.ag)}</b></div>`:""}<div class="row"><span>Caixa de bônus (${numF(p.bonus)}%)</span><b>${brl(c.bonus)}</b></div><div class="row tot"><span>Comissão total (${numF(c.pctTotal)}%)</span><b>${brl(c.total)}</b></div>`};
+  $("#f").oninput=pv;pv();$("#fValor").onblur=e=>{const n=parseMoney(e.target.value);e.target.value=n?moneyIn(n):""};
+  bindSubmit(async()=>{const valor=parseMoney($("#fValor").value),data=$("#fData").value;if(!data||valor<=0){toast("Informe a data e o valor da venda.");return false}
+    return saveDoc("vendas",id,{data,valor,imovel:$("#fImovel").value.trim(),cliente:$("#fCliente").value.trim(),origem:$("#fOrigem").value,corretorId:$("#fCor").value,agenciadorId:$("#fAg").value||null,obs:$("#fObs").value.trim(),
+      pct:v.pct||{pctCorretor:+S.cfg.pctCorretor,pctImob:+S.cfg.pctImob,pctBonus:+S.cfg.pctBonus,pctAgenc:+S.cfg.pctAgenc}})},id?"Venda atualizada":"Venda lançada")}
+
+function openReceber(id){const v=S.ven.find(x=>x.id===id);if(!v)return;const c=com(v);
+  openModal(`<h2>Receber comissão</h2><p style="margin:-6px 0 14px;color:var(--muted)">${esc(v.imovel||"Venda")} · ${brl0(v.valor)} · comissão ${brl(c.total)}, já recebido ${brl(c.rec)}</p>
+  <form class="form" id="f"><label>Data do recebimento<input type="date" id="fData" required value="${todayStr()}"></label>
+  <label>Valor recebido (R$)<input id="fValor" inputmode="decimal" required value="${moneyIn(c.pend)}"></label>
+  <label class="full">Descrição<input id="fDesc" value="Comissão – ${esc(v.imovel||"venda")}"></label></form>
+  <p class="t2" style="margin:10px 0 0">Entra no caixa como “Comissão de venda”. Pode receber em parcelas: lance cada uma quando cair.</p>${footBtns()}`);
+  bindSubmit(async()=>{const valor=parseMoney($("#fValor").value);if(valor<=0){toast("Informe o valor recebido.");return false}
+    return saveDoc("lancamentos",null,{tipo:"entrada",categoria:"Comissão de venda",data:$("#fData").value,valor,descricao:$("#fDesc").value.trim(),vendaId:id,corretorId:null})},"Recebimento lançado")}
+
+function openRepasse(id){const v=S.ven.find(x=>x.id===id);if(!v)return;const c=com(v);
+  const parts=[[v.corretorId,c.cor,"venda"]];if(v.agenciadorId)parts.push([v.agenciadorId,c.ag,"agenciamento"]);
+  const rows=parts.map(p=>({id:p[0],devido:p[1]*c.r,total:p[1],pago:S.repMap[id+"|"+p[0]]||0,tipo:p[2]}));
+  openModal(`<h2>Repassar ao corretor</h2><p style="margin:-6px 0 14px;color:var(--muted)">${esc(v.imovel||"Venda")} · a imob já recebeu ${pctF(c.r)} da comissão</p>
+  <div class="preview" style="margin-bottom:12px">${rows.map(r=>`<div class="row"><span>${esc(corNome(r.id))} (${r.tipo})</span><b>${brl(r.pago)} repassado de ${brl(r.total)}</b></div>`).join("")}</div>
+  <form class="form" id="f"><label>Corretor<select id="fCor">${rows.map(r=>`<option value="${r.id}">${esc(corNome(r.id))} · ${r.tipo}</option>`).join("")}</select></label>
+  <label>Data<input type="date" id="fData" value="${todayStr()}"></label>
+  <label class="full">Valor do repasse (R$)<input id="fValor" inputmode="decimal" value="${moneyIn(Math.max(0,rows[0].devido-rows[0].pago))}"></label></form>
+  <p class="t2" style="margin:10px 0 0">Sai do caixa como “Repasse a corretor”. O valor sugerido é a parte dele sobre o que já foi recebido.</p>${footBtns()}`);
+  $("#fCor").onchange=e=>{const r=rows.find(x=>x.id===e.target.value);$("#fValor").value=moneyIn(Math.max(0,r.devido-r.pago))};
+  bindSubmit(async()=>{const valor=parseMoney($("#fValor").value);if(valor<=0){toast("Informe o valor do repasse.");return false}const cid=$("#fCor").value;
+    return saveDoc("lancamentos",null,{tipo:"saida",categoria:"Repasse a corretor",data:$("#fData").value,valor,descricao:"Repasse "+corNome(cid)+" – "+(v.imovel||"venda"),vendaId:id,corretorId:cid})},"Repasse lançado")}
+
+function openLanc(id){const l=id?S.lanc.find(x=>x.id===id):{tipo:"entrada",data:defDate()};
+  const catOpts=t=>(t==="entrada"?CAT_ENT:CAT_SAI).map(c=>`<option ${c===l.categoria?"selected":""}>${c}</option>`).join("");
+  openModal(`<h2>${id?"Editar lançamento":"Novo lançamento"}</h2><form class="form" id="f">
+  <div class="full radio"><label><input type="radio" name="tipo" value="entrada" ${l.tipo==="entrada"?"checked":""}> Entrada</label><label><input type="radio" name="tipo" value="saida" ${l.tipo==="saida"?"checked":""}> Saída</label></div>
+  <label>Data<input type="date" id="fData" required value="${esc(l.data||"")}"></label><label>Valor (R$)<input id="fValor" inputmode="decimal" required value="${moneyIn(l.valor)}"></label>
+  <label>Categoria<select id="fCat">${catOpts(l.tipo)}</select></label>
+  <label>Corretor (opcional)<select id="fCor"><option value="">—</option>${corOpts(l.corretorId,true)}</select></label>
+  <label class="full">Descrição<input id="fDesc" value="${esc(l.descricao||"")}"></label>
+  ${l.vendaId?`<p class="full t2" style="margin:0">Vinculado à venda: ${esc((S.ven.find(v=>v.id===l.vendaId)||{}).imovel||"venda")}</p>`:""}</form>${footBtns("lancamentos",id)}`);
+  document.querySelectorAll("input[name=tipo]").forEach(r=>r.onchange=e=>{$("#fCat").innerHTML=catOpts(e.target.value)});
+  bindSubmit(async()=>{const valor=parseMoney($("#fValor").value);if(valor<=0||!$("#fData").value){toast("Informe a data e o valor.");return false}
+    return saveDoc("lancamentos",id,{tipo:document.querySelector("input[name=tipo]:checked").value,data:$("#fData").value,valor,categoria:$("#fCat").value,corretorId:$("#fCor").value||null,descricao:$("#fDesc").value.trim(),vendaId:l.vendaId||null})},id?"Lançamento atualizado":"Lançamento salvo")}
+
+function openLead(id){if(!id&&!needCor())return;const l=id?S.lead.find(x=>x.id===id):{data:defDate(),quantidade:1,corretorId:meuCor()};
+  openModal(`<h2>${id?"Editar lead":"Registrar leads"}</h2><form class="form" id="f">
+  <label>Data<input type="date" id="fData" required value="${esc(l.data||"")}"></label><label>Quantidade<input type="number" min="1" step="1" id="fQtd" value="${+l.quantidade||1}"></label>
+  <label>Corretor que recebeu<select id="fCor">${corOpts(l.corretorId)}</select></label><label>Origem<select id="fOrig">${origOpts(l.origem)}</select></label>
+  <label class="full">Cliente (opcional)<input id="fCli" value="${esc(l.cliente||"")}"></label><label class="full">Observações<input id="fObs" value="${esc(l.obs||"")}"></label></form>${footBtns("leads",id)}`);
+  bindSubmit(async()=>{if(!$("#fData").value){toast("Informe a data.");return false}return saveDoc("leads",id,{data:$("#fData").value,quantidade:Math.max(1,parseInt($("#fQtd").value)||1),corretorId:$("#fCor").value,origem:$("#fOrig").value,cliente:$("#fCli").value.trim(),obs:$("#fObs").value.trim()})},id?"Lead atualizado":"Leads registrados")}
+
+function openAg(id){if(!id&&!needCor())return;const a=id?S.ag.find(x=>x.id===id):{data:defDate(),finalidade:"Venda",corretorId:meuCor()};
+  openModal(`<h2>${id?"Editar agenciamento":"Novo agenciamento"}</h2><form class="form" id="f">
+  <label>Data<input type="date" id="fData" required value="${esc(a.data||"")}"></label><label>Corretor que captou<select id="fCor">${corOpts(a.corretorId)}</select></label>
+  <label class="full">Imóvel<input id="fImovel" placeholder="Endereço ou referência" value="${esc(a.imovel||"")}"></label>
+  <label>Finalidade<select id="fFin">${["Venda","Locação","Venda e locação"].map(o=>`<option ${o===a.finalidade?"selected":""}>${o}</option>`).join("")}</select></label>
+  <label>Valor anunciado (R$)<input id="fValor" inputmode="decimal" value="${moneyIn(a.valor)}"></label>
+  <label class="full">Observações<input id="fObs" value="${esc(a.obs||"")}"></label></form>${footBtns("agenciamentos",id)}`);
+  bindSubmit(async()=>{if(!$("#fData").value){toast("Informe a data.");return false}return saveDoc("agenciamentos",id,{data:$("#fData").value,corretorId:$("#fCor").value,imovel:$("#fImovel").value.trim(),finalidade:$("#fFin").value,valor:parseMoney($("#fValor").value)||null,obs:$("#fObs").value.trim()})},id?"Agenciamento atualizado":"Agenciamento registrado")}
+
+let submitting=false;
+function bindSubmit(fn,msg){const f=$("#f"),btn=$("#sheet button[type=submit]");
+  const go=async e=>{e&&e.preventDefault();if(submitting)return;if(!f.reportValidity())return;submitting=true;btn.disabled=true;
+    try{const ok=await fn();if(ok!==false){closeModal();toast(msg)}}finally{submitting=false;if(btn.isConnected)btn.disabled=false}};
+  f.onsubmit=go;btn.onclick=go}
+
+async function doDelete(btn){const col=btn.dataset.col,id=btn.dataset.id;
+  if(!btn.classList.contains("armed")){
+    if(col==="corretores"){const used=S.ven.some(v=>v.corretorId===id||v.agenciadorId===id)||S.lead.some(l=>l.corretorId===id)||S.ag.some(a=>a.corretorId===id);
+      if(used){toast("Este corretor tem registros. Desmarque “Corretor ativo” para tirá-lo da equipe sem perder o histórico.");return}}
+    btn.classList.add("armed");btn.textContent="Confirmar exclusão";setTimeout(()=>{if(btn.isConnected){btn.classList.remove("armed");btn.textContent="Excluir"}},4000);return}
+  btn.disabled=true;if(await delDoc(col,id)){closeModal();toast("Excluído")}else btn.disabled=false}
+
+/* ---------- eventos ---------- */
+document.addEventListener("click",e=>{
+  const el=e.target.closest("[data-a]");if(!el){if(e.target.id==="modal")closeModal();return}
+  const a=el.dataset.a,id=el.dataset.id;
+  const map={"venda-nova":()=>openVenda(),"venda-edit":()=>openVenda(id),"receber":()=>openReceber(id),"repasse":()=>openRepasse(id),
+    "cor-novo":()=>openCor(),"cor-edit":()=>openCor(id),"cor-ficha":()=>fichaCor(id),"lead-novo":()=>openLead(),"lead-edit":()=>openLead(id),
+    "ag-novo":()=>openAg(),"ag-edit":()=>openAg(id),"lanc-novo":()=>openLanc(),"lanc-edit":()=>openLanc(id),
+    "user-save":()=>saveUser(id),"user-ok":()=>saveUser(id,true),"user-block":()=>saveUser(id,false),
+    "close":closeModal,"del":()=>doDelete(el),"ftipo":()=>{S.fLancTipo=id;render()}};
+  if(map[a]){e.preventDefault();map[a]()}});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!$("#modal").hidden)closeModal();
+  if((e.key==="Enter"||e.key===" ")&&e.target.matches(".cor[data-a]")){e.preventDefault();fichaCor(e.target.dataset.id)}});
+document.querySelectorAll("[data-esc]").forEach(b=>b.onclick=()=>{S.escopo=b.dataset.esc;store("ci_esc",S.escopo);render()});
+$("#prev").onclick=()=>shift(-1);$("#next").onclick=()=>shift(1);
+window.addEventListener("hashchange",()=>{if(S.recovery)return;S.cfgDirty=false;render()});
+try{matchMedia("(prefers-color-scheme: dark)").addEventListener("change",()=>render())}catch(e){}
+
+/* ---------- início ---------- */
+async function boot(){
+  const cfg=window.IMOB_CONFIG||{};
+  if(!cfg.supabaseUrl||/COLE_AQUI/.test(cfg.supabaseUrl+cfg.supabaseAnonKey)){showSetup();return}
+  if(!window.supabase){authScreen(`<h1>Sem conexão</h1><p class="lead">Não foi possível carregar o sistema. Verifique a internet e recarregue a página.</p>`);return}
+  S.recovery=/type=recovery/.test(location.hash);
+  S.sb=window.supabase.createClient(cfg.supabaseUrl,cfg.supabaseAnonKey);
+  S.sb.auth.onAuthStateChange(ev=>{if(ev==="PASSWORD_RECOVERY"){S.recovery=true;S.ready=false;showNovaSenha()}});
+  const{data:{session}}=await S.sb.auth.getSession();
+  if(S.recovery&&session){showNovaSenha();return}
+  if(session)await enter(session);else showLogin();
+}
+boot();
+</script>
+</body>
+</html>
